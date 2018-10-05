@@ -3,13 +3,11 @@
 import sys 
 import os
 from datetime import date
-from subprocess import call, check_output
+from subprocess import call, check_call, check_output
 from configparser import ConfigParser, ExtendedInterpolation
 import utils
 import definePaths as p 
-
-def makeExperimentName (experimentDate, simulationName, experimentNumber):
-    return "{0}_{1}_{2:02d}".format(experimentDate, simulationName, experimentNumber)
+import exceptions
 
 
 def writeCommitHashToFile(filename,commithash):
@@ -35,52 +33,88 @@ def getGitCommitHash(pathToRepo):
     os.chdir(savePath)
     return commithash
 
-if __name__ == '__main__': 
-    if ( len(sys.argv) < 3) :
-        print 'Usage : ', sys.argv[0], ' <project> <name>'
-        sys.exit(1)
-    projectName = sys.argv[1]
-    simulationName = sys.argv[2] 
-    print 'saving current experiment in project ', projectName
+def getProjectConfig(projectName):
     config = ConfigParser(interpolation = ExtendedInterpolation())
-    config.read(os.path.join(projectName,'project.ini'))                    
-    paths = config['paths']        
-    
-    print 'extracting experiment name...'        
-    experimentDate=date.today().strftime('%Y%m%d')
-    
+    config.read(os.path.join(projectName,'project.ini'))  
+    return config
+
+def makeExperimentNameFromDateNameAndNumber (experimentDate, simulationName, experimentNumber):
+    return "{0}_{1}_{2:02d}".format(experimentDate, simulationName, experimentNumber)
+
+def getRelativeExperimentTopPath(projectName, experimentName):
+    return os.path.join(projectName,experimentName)
+
+def makeUniqueExperimentName(projectName, simulationName):
+    experimentDate=date.today().strftime('%Y%m%d')        
     experimentNumber = 0
-    experimentName =  makeExperimentName(experimentDate,simulationName,experimentNumber)
-    while (os.path.isdir(os.path.join(projectName,experimentName) )):
+    experimentName =  makeExperimentNameFromDateNameAndNumber(experimentDate,simulationName,experimentNumber)
+    while (os.path.isdir(getRelativeExperimentTopPath(projectName,experimentName) )):
         experimentNumber  = experimentNumber + 1    
-        experimentName    = makeExperimentName(experimentDate,simulationName,experimentNumber)
-     
-    experimentPath = os.path.join(projectName,experimentName)  
-    os.mkdir(experimentPath)
-    os.mkdir(os.path.join(experimentPath,'experiment-data'))
-    
-    print 'extracting git commit hash...'
-    if (not utils.checkIfGitRepoIsClean(paths['top']) ):
-        sys.exit(1)   
-    commithash = getGitCommitHash(paths['top'])
-    writeCommitHashToFile(os.path.join(experimentPath,'commithash'),commithash)
-    
-    
-    
-    experimentData = open(os.path.join(paths['top'],'experiment-data'),'r')
+        experimentName    = makeExperimentNameFromDateNameAndNumber(experimentDate,simulationName,experimentNumber)
+    return experimentName
+
+def getRelativeExperimentPaths(projectName, experimentName):
+    experimentPath = getRelativeExperimentTopPath(projectName,experimentName)
+    paths = {'top':experimentPath,\
+             'data':os.path.join(experimentPath,'experiment-data/'),\
+             'commithash':os.path.join(experimentPath,'commithash')}
+    return paths
+
+def getListOfExperimentDataFiles(filename):
+    filelist = []
+    experimentData = open(filename,'r')
     for line in experimentData:
-        relativePath = line.strip()
-        fromFile = os.path.join(paths['top'],relativePath)
-        toFile = os.path.join(experimentPath,'experiment-data',relativePath)
-        makeAllDirectories(os.path.join(experimentPath,'experiment-data'),relativePath)
-        status = call(['cp', fromFile, toFile ])
-        if (status != 0):
-            print 'could not copy the file', fromFile 
-            sys.exit()
+        filelist.append(line.strip())
     experimentData.close()
+    return filelist
+
     
+if __name__ == '__main__': 
+    try:
+        if ( len(sys.argv) < 3) :
+            raise Exception('Not enough arguments have been provided. Usage: saveCurrentExperiment <project> <name>')
+        projectName = sys.argv[1]
+        simulationName = sys.argv[2] 
+        print 'saving current experiment in project ', projectName
+        projectConfig = getProjectConfig(projectName) 
+        projectPaths = projectConfig['paths']
+        experimentName = makeUniqueExperimentName(projectName, simulationName)        
+        experimentPaths = getRelativeExperimentPaths(projectName, experimentName)        
+
+        experimentFiles = getListOfExperimentDataFiles(projectPaths['experiment-data'])
+        
+        if (not utils.checkIfGitRepoIsClean(projectPaths['git'],projectPaths['top'], experimentFiles) ):
+            raise Exception("There are uncommitted changes in the git repository {0}\nMake sure that the working directory is clean.".format(projectPaths['git'])) 
+        
+        
+        os.mkdir(experimentPaths['top'])        
+        try:
+            os.mkdir(experimentPaths['data'])            
             
-    print 'successfully saved the experiment to' , experimentPath
+            commithash = getGitCommitHash(projectPaths['top'])
+            writeCommitHashToFile(experimentPaths['commithash'],commithash)        
+            
+            for exfile in experimentFiles:
+                fromFile = os.path.join(projectPaths['top'],exfile)
+                toFile = os.path.join(experimentPaths['data'],exfile)
+                makeAllDirectories(experimentPaths['data'],exfile)
+                check_call(['cp', fromFile, toFile ])
+            
+        except Exception, Message:
+            print 'Cleaning up failed attempt at saving'
+            check_call(['rm', '-r', experimentPaths['top']])
+            raise Exception(Message)
+        
+        print 'successfully saved the experiment to' , experimentPaths['top']
+        sys.exit(0)
+
+    except Exception, Message:
+        print 'Failed to save the current Experiment'
+        print Message
+        sys.exit(1)
+        
+    
+        
     
     
     

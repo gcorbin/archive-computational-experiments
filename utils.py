@@ -1,13 +1,20 @@
 import os
 from subprocess import call
 
-def checkIfGitRepoIsClean(pathToRepo):
+def makeGitDiffExcludeList(excludeList):
+    modifiedList = []
+    for item in excludeList:
+        modifiedList.append("\':(exclude){0}\'".format(item))
+    return modifiedList
+
+def checkIfGitRepoIsClean(pathToRepo,pathToProject,excludeList):
     savePath = os.getcwd()
-    os.chdir(pathToRepo)
-    status = call(['git','diff','--quiet'])
+    os.chdir(pathToProject)
+        
+    command = "git diff --quiet -- " + pathToRepo + " " 
+    for item in makeGitDiffExcludeList(excludeList):
+        command = command + " " + item
+    
+    status = os.system(command)
     os.chdir(savePath)
-    if (status != 0) :
-        print 'There are uncommitted changes in the git repository', pathToRepo
-        print 'Make sure that your working directory is clean'
-        return False
-    return True
+    return (status == 0)
