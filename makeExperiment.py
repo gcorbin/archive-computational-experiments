@@ -5,6 +5,7 @@ import os
 from subprocess import call
 import definePaths as p 
 import utils
+from configparser import ConfigParser, ExtendedInterpolation
 
 def readCommitHashFromFile(filename):
     commitFile = open(filename,'r')
@@ -29,45 +30,39 @@ if __name__ == '__main__':
     experimentName = sys.argv[2]
     print 'making experiment', experimentName , ' in project ', projectName, '.'
     print 'checking paths and files...'
-    paths = {}
-    paths.update( p.defineProjectPaths(projectName) )
-    paths.update( p.defineExperimentPaths(projectName,experimentName) )    
-    if (not p.checkIfPathsExist(paths) ) : 
-        sys.exit(1)
-        
-    experimentFiles = p.defineExperimentFiles()
-    experimentFilesInExperiment = p.prependPathToFiles(paths['experiment'], experimentFiles)
-    if (not p.checkIfFilesExist(experimentFilesInExperiment) ) :
-        sys.exit(1)
+    config = ConfigParser(interpolation = ExtendedInterpolation())
+    config.read(os.path.join(projectName,'project.ini'))
+                   
+    experimentPath = os.path.join(projectName,experimentName)    
+    paths = config['paths']        
         
     print 'checking out the git commit ...'
-    if (not utils.checkIfGitRepoIsClean(paths['git']) ):
-        sys.exit(1)        
+    if (not utils.checkIfGitRepoIsClean(paths['top']) ):
+        sys.exit(1)   
     
-    commitHash = readCommitHashFromFile(experimentFilesInExperiment['commit'])
-    status = checkoutGitCommit(paths['git'],commitHash)
-    os.chdir(paths['git'])
-    status = call(['git','checkout' , commitHash])
-    if (status != 0):
-        sys.exit()
+    commitHash = readCommitHashFromFile( os.path.join(experimentPath,'commithash') )
+    status = checkoutGitCommit(paths['top'],commitHash)
     
     print 'copying experiment files...'
-    experimentFilesInProject = p.prependPathToFiles(paths['projectConfig'],experimentFiles)
-    for key in experimentFilesInExperiment:
-        status = call(['cp', experimentFilesInExperiment[key],experimentFilesInProject[key] ])
+    experimentData = open(os.path.join(paths['top'],'experiment-data'),'r')
+    for line in experimentData:
+        relativePath = line.strip()
+        fromFile = os.path.join(experimentPath,'experiment-data',relativePath)
+        toFile  = os.path.join(paths['top'],relativePath)
+        status = call(['cp', fromFile, toFile ])
         if (status != 0):
-            print 'could not copy the ', key , 'file' 
+            print 'could not copy the file', fromFile 
             sys.exit()
+    experimentData.close()
     
     print 'building the executable'
-    os.chdir(paths['projectBuild'])
-    status = call(['make', '-B', projectName])
+    os.chdir(paths['build'])
+    status = call((config['settings']['build-command']).split())
     if (status != 0):
         print 'failed to build the executable' , projectName
         sys.exit()
         
     print 'successfully made the experiment' , experimentName , 'in project', projectName
-
         
         
     
