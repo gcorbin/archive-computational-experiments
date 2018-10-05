@@ -2,11 +2,8 @@
 
 import sys 
 import os
-from datetime import date
 from subprocess import call, check_call, check_output
-from configparser import ConfigParser, ExtendedInterpolation
 import utils
-import definePaths as p 
 import exceptions
 
 
@@ -33,41 +30,6 @@ def getGitCommitHash(pathToRepo):
     os.chdir(savePath)
     return commithash
 
-def getProjectConfig(projectName):
-    config = ConfigParser(interpolation = ExtendedInterpolation())
-    config.read(os.path.join(projectName,'project.ini'))  
-    return config
-
-def makeExperimentNameFromDateNameAndNumber (experimentDate, simulationName, experimentNumber):
-    return "{0}_{1}_{2:02d}".format(experimentDate, simulationName, experimentNumber)
-
-def getRelativeExperimentTopPath(projectName, experimentName):
-    return os.path.join(projectName,experimentName)
-
-def makeUniqueExperimentName(projectName, simulationName):
-    experimentDate=date.today().strftime('%Y%m%d')        
-    experimentNumber = 0
-    experimentName =  makeExperimentNameFromDateNameAndNumber(experimentDate,simulationName,experimentNumber)
-    while (os.path.isdir(getRelativeExperimentTopPath(projectName,experimentName) )):
-        experimentNumber  = experimentNumber + 1    
-        experimentName    = makeExperimentNameFromDateNameAndNumber(experimentDate,simulationName,experimentNumber)
-    return experimentName
-
-def getRelativeExperimentPaths(projectName, experimentName):
-    experimentPath = getRelativeExperimentTopPath(projectName,experimentName)
-    paths = {'top':experimentPath,\
-             'data':os.path.join(experimentPath,'experiment-data/'),\
-             'commithash':os.path.join(experimentPath,'commithash')}
-    return paths
-
-def getListOfExperimentDataFiles(filename):
-    filelist = []
-    experimentData = open(filename,'r')
-    for line in experimentData:
-        filelist.append(line.strip())
-    experimentData.close()
-    return filelist
-
     
 if __name__ == '__main__': 
     try:
@@ -76,12 +38,11 @@ if __name__ == '__main__':
         projectName = sys.argv[1]
         simulationName = sys.argv[2] 
         print 'saving current experiment in project ', projectName
-        projectConfig = getProjectConfig(projectName) 
+        projectConfig = utils.getProjectConfig(projectName) 
         projectPaths = projectConfig['paths']
-        experimentName = makeUniqueExperimentName(projectName, simulationName)        
-        experimentPaths = getRelativeExperimentPaths(projectName, experimentName)        
-
-        experimentFiles = getListOfExperimentDataFiles(projectPaths['experiment-data'])
+        experimentName = utils.makeUniqueExperimentName(projectName, simulationName)        
+        experimentPaths = utils.getRelativeExperimentPaths(projectName, experimentName) 
+        experimentFiles = utils.getListOfExperimentDataFiles(projectPaths['experiment-data'])
         
         if (not utils.checkIfGitRepoIsClean(projectPaths['git'],projectPaths['top'], experimentFiles) ):
             raise Exception("There are uncommitted changes in the git repository {0}\nMake sure that the working directory is clean.".format(projectPaths['git'])) 
@@ -91,9 +52,11 @@ if __name__ == '__main__':
         try:
             os.mkdir(experimentPaths['data'])            
             
+            print 'saving git commit hash...'
             commithash = getGitCommitHash(projectPaths['top'])
             writeCommitHashToFile(experimentPaths['commithash'],commithash)        
             
+            print 'saving experiment files...'
             for exfile in experimentFiles:
                 fromFile = os.path.join(projectPaths['top'],exfile)
                 toFile = os.path.join(experimentPaths['data'],exfile)
@@ -101,7 +64,7 @@ if __name__ == '__main__':
                 check_call(['cp', fromFile, toFile ])
             
         except Exception, Message:
-            print 'Cleaning up failed attempt at saving'
+            print 'Cleaning up failed attempt at saving...'
             check_call(['rm', '-r', experimentPaths['top']])
             raise Exception(Message)
         
@@ -109,7 +72,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     except Exception, Message:
-        print 'Failed to save the current Experiment'
+        print 'Failed to save the current experiment:'
         print Message
         sys.exit(1)
         
