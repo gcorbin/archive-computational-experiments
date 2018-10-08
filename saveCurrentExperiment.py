@@ -71,8 +71,9 @@ if __name__ == '__main__':
                 hashesFile = open(experimentPaths['hashed-files'],'w')
                 for item in hfiles:
                     fileToHash = os.path.join(projectPaths['hashed-files-folder'],item)
-                    hashvalue = project_utils.computeFileHash(fileToHash)
-                    hashesFile.write("{0} {1}\n".format(item, hashvalue))
+                    hashAlgorithm = projectConfig['settings']['hash-algorithm']
+                    hashvalue = project_utils.computeFileHash(fileToHash,hashAlgorithm)
+                    hashesFile.write("{0} {1} {2}\n".format(item,hashAlgorithm,hashvalue))
                 hashesFile.close()                    
     
             

@@ -42,8 +42,8 @@ def getListOfExperimentDataFiles(filename):
     return filelist
 
 
-def computeFileHash(fileName):
-    fileHash = hashlib.sha256()
+def computeFileHash(fileName, hashAlgorithm):
+    fileHash = hashlib.new(hashAlgorithm)
     
     bufferSize = 64 * pow(2,10) 
     fileToHash = open(fileName,'r')

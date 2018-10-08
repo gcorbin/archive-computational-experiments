@@ -45,13 +45,14 @@ if __name__ == '__main__':
         hashesFile = open(experimentPaths['hashed-files'],'r')
         for line in hashesFile:
             splitline = line.strip('\n').split(' ')
-            if (len(splitline) != 2):
+            if (len(splitline) != 3):
                 raise Exception("Invalid line in hashes file {0}: {1}".format(experimentPaths['hashed-files'],line))
             fileToHash = os.path.join(projectPaths['hashed-files-folder'],splitline[0])
-            storedHash = splitline[1]            
-            computedHash = project_utils.computeFileHash(fileToHash)
+            hashAlgorithm = splitline[1]
+            storedHash = splitline[2]       
+            computedHash = project_utils.computeFileHash(fileToHash, hashAlgorithm)
             if (storedHash != computedHash):
-                raise Exception("The stored hash for the file {0} is different from the computed hash for file {1}. {2} != {3}".format(splitline[0],fileToHash,storedHash,computedHash))
+                raise Exception("The stored {0} hash for the file {1} is different from the computed hash for file {2}. {3} != {4}".format(hashAlgorithm,splitline[0],fileToHash,storedHash,computedHash))
             
                 
         
