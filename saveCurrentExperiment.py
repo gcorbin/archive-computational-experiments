@@ -3,15 +3,10 @@
 import sys 
 import os
 from subprocess import call, check_call, check_output
-import utils
+import project_utils, git_utils
 import exceptions
 import imp
 
-
-def writeCommitHashToFile(filename,commithash):
-    commitFile = open(filename,'w')
-    commitFile.write(commithash)
-    commitFile.close()
   
 def makeAllDirectories(topdir,path):
     dirname = os.path.dirname(path)
@@ -24,13 +19,6 @@ def makeAllDirectories(topdir,path):
     os.chdir(savePath)
     
 
-def getGitCommitHash(pathToRepo):
-    savePath = os.getcwd()
-    os.chdir(pathToRepo)
-    commithash = check_output(['git','rev-parse','master'])
-    os.chdir(savePath)
-    return commithash
-
     
 if __name__ == '__main__': 
     try:
@@ -39,14 +27,14 @@ if __name__ == '__main__':
         projectName = sys.argv[1]
         simulationName = sys.argv[2] 
         print 'saving current experiment in project ', projectName
-        projectConfig = utils.getProjectConfig(projectName) 
+        projectConfig = project_utils.getProjectConfig(projectName) 
         projectPaths = projectConfig['paths']
-        experimentName = utils.makeUniqueExperimentName(projectName, simulationName)      
+        experimentName = project_utils.makeUniqueExperimentName(projectName, simulationName)      
         scriptPath = os.getcwd()  
-        experimentPaths = utils.getRelativeExperimentPaths(projectName, experimentName) 
-        experimentFiles = utils.getListOfExperimentDataFiles(projectPaths['experiment-data'])
+        experimentPaths = project_utils.getRelativeExperimentPaths(projectName, experimentName) 
+        experimentFiles = project_utils.getListOfExperimentDataFiles(projectPaths['experiment-data'])
         
-        if (not utils.checkIfGitRepoIsClean(projectPaths['git'],projectPaths['top'], experimentFiles) ):
+        if (not git_utils.checkIfGitRepoIsClean(projectPaths['git'],projectPaths['top'], experimentFiles) ):
             raise Exception("There are uncommitted changes in the git repository {0}\nMake sure that the working directory is clean.".format(projectPaths['git'])) 
         
         
@@ -55,8 +43,8 @@ if __name__ == '__main__':
             os.mkdir(experimentPaths['data'])            
             
             print 'saving git commit hash...'
-            commithash = getGitCommitHash(projectPaths['top'])
-            writeCommitHashToFile(experimentPaths['commithash'],commithash)        
+            commithash = git_utils.getGitCommitHash(projectPaths['top'])
+            git_utils.writeCommitHashToFile(experimentPaths['commithash'],commithash)        
 
             print 'saving command...'
             if (not os.path.isfile(projectPaths['last-command']) or os.path.getsize(projectPaths['last-command']) == 0):
@@ -82,7 +70,7 @@ if __name__ == '__main__':
                 hashesFile = open(experimentPaths['hashed-files'],'w')
                 for item in hfiles:
                     fileToHash = os.path.join(projectPaths['hashed-files-folder'],item)
-                    hashvalue = utils.computeFileHash(fileToHash)
+                    hashvalue = project_utils.computeFileHash(fileToHash)
                     hashesFile.write("{0} {1}\n".format(item, hashvalue))
                 hashesFile.close()                    
     

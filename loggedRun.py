@@ -3,7 +3,7 @@
 import sys 
 import os
 from subprocess import check_call
-import utils
+import project_utils, git_utils
 
 def runCommandInFolder(command,folder):
     savePath = os.getcwd()
@@ -17,7 +17,7 @@ if __name__ == '__main__':
         if ( len(sys.argv) < 3) :
             raise Exception('Not enough arguments have been provided. Usage: runAndSaveArguments <project> <command with args>')
         projectName = sys.argv[1]
-        projectConfig = utils.getProjectConfig(projectName) 
+        projectConfig = project_utils.getProjectConfig(projectName) 
         projectPaths = projectConfig['paths']  
         numargs = len(sys.argv)
         command = sys.argv[2:numargs]

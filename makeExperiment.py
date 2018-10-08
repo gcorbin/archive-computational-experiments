@@ -3,14 +3,9 @@
 import sys 
 import os
 from subprocess import check_call
-import utils
+import project_utils, git_utils
 from configparser import ConfigParser, ExtendedInterpolation
 
-def readCommitHashFromFile(filename):
-    commitFile = open(filename,'r')
-    commitHash = commitFile.readline().strip('\n')
-    commitFile.close()
-    return commitHash
 
 def readCommandFromFile(filename):
     commandFile = open(filename,'r')
@@ -18,11 +13,6 @@ def readCommandFromFile(filename):
     commandFile.close()
     return command
 
-def checkoutGitCommit(pathToRepo,commitHash):
-    savePath = os.getcwd()
-    os.chdir(pathToRepo)
-    check_call(['git','checkout' , commitHash])
-    os.chdir(savePath)
 
 if __name__ == '__main__': 
     try: 
@@ -31,17 +21,17 @@ if __name__ == '__main__':
         projectName = sys.argv[1]
         experimentName = sys.argv[2]        
         print 'making experiment', experimentName , ' in project ', projectName, '.'    
-        projectConfig = utils.getProjectConfig(projectName) 
+        projectConfig = project_utils.getProjectConfig(projectName) 
         projectPaths = projectConfig['paths']  
-        experimentPaths = utils.getRelativeExperimentPaths(projectName, experimentName)        
-        experimentFiles = utils.getListOfExperimentDataFiles(projectPaths['experiment-data'])
+        experimentPaths = project_utils.getRelativeExperimentPaths(projectName, experimentName)        
+        experimentFiles = project_utils.getListOfExperimentDataFiles(projectPaths['experiment-data'])
         
-        if (not utils.checkIfGitRepoIsClean(projectPaths['git'],projectPaths['top'], experimentFiles) ):
+        if (not git_utils.checkIfGitRepoIsClean(projectPaths['git'],projectPaths['top'], experimentFiles) ):
             raise Exception("There are uncommitted changes in the git repository {0}\nMake sure that the working directory is clean.".format(projectPaths['git'])) 
             
         print 'checking out git commit...'
-        commitHash = readCommitHashFromFile( experimentPaths['commithash'] )
-        checkoutGitCommit(projectPaths['git'],commitHash)
+        commitHash = git_utils.readCommitHashFromFile( experimentPaths['commithash'] )
+        git_utils.checkoutGitCommit(projectPaths['git'],commitHash)
 
         print 'loading experiment files...'
         for exfile in experimentFiles:
@@ -58,7 +48,7 @@ if __name__ == '__main__':
                 raise Exception("Invalid line in hashes file {0}: {1}".format(experimentPaths['hashed-files'],line))
             fileToHash = os.path.join(projectPaths['hashed-files-folder'],splitline[0])
             storedHash = splitline[1]            
-            computedHash = utils.computeFileHash(fileToHash)
+            computedHash = project_utils.computeFileHash(fileToHash)
             if (storedHash != computedHash):
                 raise Exception("The stored hash for the file {0} is different from the computed hash for file {1}. {2} != {3}".format(splitline[0],fileToHash,storedHash,computedHash))
             
