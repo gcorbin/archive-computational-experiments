@@ -34,6 +34,7 @@ if __name__ == '__main__':
         git_utils.checkoutGitCommit(projectPaths['git'],commitHash)
 
         print 'loading experiment files...'
+        experimentFiles = project_utils.getListOfExperimentDataFiles(projectPaths['experiment-data']) # reload file list since it could have changed in the checkout step
         for exfile in experimentFiles:
             fromFile = os.path.join(experimentPaths['data'],exfile)
             toFile  = os.path.join(projectPaths['top'],exfile)

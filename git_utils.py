@@ -8,11 +8,12 @@ def makeGitDiffExcludeList(excludeList):
         modifiedList.append("\':(exclude){0}\'".format(item))
     return modifiedList
 
+
 def checkIfGitRepoIsClean(pathToRepo,pathToProject,excludeList):
     savePath = os.getcwd()
     os.chdir(pathToProject)
         
-    command = "git diff --quiet -- " + pathToRepo + " " 
+    command = "git diff HEAD --quiet -- " + pathToRepo + " " 
     for item in makeGitDiffExcludeList(excludeList):
         command = command + " " + item
     
@@ -33,6 +34,7 @@ def writeCommitHashToFile(filename,commithash):
     commitFile = open(filename,'w')
     commitFile.write(commithash)
     commitFile.close()
+    
     
 def readCommitHashFromFile(filename):
     commitFile = open(filename,'r')
