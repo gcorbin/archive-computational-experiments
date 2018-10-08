@@ -29,9 +29,10 @@ if __name__ == '__main__':
         print 'saving current experiment in project ', projectName
         projectConfig = project_utils.getProjectConfig(projectName) 
         projectPaths = projectConfig['paths']
-        experimentName = project_utils.makeUniqueExperimentName(projectName, simulationName)      
+        experimentName = project_utils.makeUniqueExperimentName(projectName, simulationName)     
+        experimentTop = project_utils.getRelativeExperimentTopPath(projectName,experimentName)
         scriptPath = os.getcwd()  
-        experimentPaths = project_utils.getRelativeExperimentPaths(projectName, experimentName) 
+        experimentPaths = project_utils.getRelativeExperimentPaths(experimentTop) 
         experimentFiles = project_utils.getListOfExperimentDataFiles(projectPaths['experiment-data'])
         
         if (not git_utils.checkIfGitRepoIsClean(projectPaths['git'],projectPaths['top'], experimentFiles) ):

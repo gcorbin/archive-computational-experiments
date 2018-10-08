@@ -24,13 +24,12 @@ def makeUniqueExperimentName(projectName, simulationName):
         experimentName    = makeExperimentNameFromDateNameAndNumber(experimentDate,simulationName,experimentNumber)
     return experimentName
 
-def getRelativeExperimentPaths(projectName, experimentName):
-    experimentPath = getRelativeExperimentTopPath(projectName,experimentName)
-    paths = {'top':experimentPath,\
-             'data':os.path.join(experimentPath,'experiment-data/'),\
-             'commithash':os.path.join(experimentPath,'commithash'),\
-             'last-command':os.path.join(experimentPath,'last-command'),\
-             'hashed-files':os.path.join(experimentPath,'hashed-files')}
+def getRelativeExperimentPaths(experimentTop):
+    paths = {'top':experimentTop,\
+             'data':os.path.join(experimentTop,'experiment-data/'),\
+             'commithash':os.path.join(experimentTop,'commithash'),\
+             'last-command':os.path.join(experimentTop,'last-command'),\
+             'hashed-files':os.path.join(experimentTop,'hashed-files')}
     return paths
 
 def getListOfExperimentDataFiles(filename):

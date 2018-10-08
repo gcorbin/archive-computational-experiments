@@ -19,11 +19,11 @@ if __name__ == '__main__':
         if ( len(sys.argv) < 3) :
             raise Exception('Not enough arguments have been provided. Usage: makeExperiment <project> <experiment>')
         projectName = sys.argv[1]
-        experimentName = sys.argv[2]        
-        print 'making experiment', experimentName , ' in project ', projectName, '.'    
+        experimentTop = sys.argv[2]        
+        print 'making experiment', experimentTop , ' in project ', projectName, '.'    
         projectConfig = project_utils.getProjectConfig(projectName) 
         projectPaths = projectConfig['paths']  
-        experimentPaths = project_utils.getRelativeExperimentPaths(projectName, experimentName)        
+        experimentPaths = project_utils.getRelativeExperimentPaths(experimentTop)        
         experimentFiles = project_utils.getListOfExperimentDataFiles(projectPaths['experiment-data'])
         
         if (not git_utils.checkIfGitRepoIsClean(projectPaths['git'],projectPaths['top'], experimentFiles) ):
@@ -65,7 +65,7 @@ if __name__ == '__main__':
         command.extend(readCommandFromFile(experimentPaths['last-command']))
         check_call(command)
 
-        print 'successfully made the experiment' , experimentName , 'in project', projectName
+        print 'successfully made the experiment' , experimentTop , 'in project', projectName
         sys.exit(0)
         
     except Exception, Message:
