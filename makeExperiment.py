@@ -9,7 +9,7 @@ from configparser import ConfigParser, ExtendedInterpolation
 
 def readCommandFromFile(filename):
     commandFile = open(filename,'r')
-    command = commandFile.readline().strip('\n').split(' ')
+    command = commandFile.readline().strip('\n').strip(' ').split(' ')
     commandFile.close()
     return command
 
