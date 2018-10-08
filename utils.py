@@ -45,7 +45,9 @@ def getRelativeExperimentPaths(projectName, experimentName):
     experimentPath = getRelativeExperimentTopPath(projectName,experimentName)
     paths = {'top':experimentPath,\
              'data':os.path.join(experimentPath,'experiment-data/'),\
-             'commithash':os.path.join(experimentPath,'commithash')}
+             'commithash':os.path.join(experimentPath,'commithash'),\
+             'last-command':os.path.join(experimentPath,'last-command'),\
+             'hashed-files':os.path.join(experimentPath,'hashed-files')}
     return paths
 
 def getListOfExperimentDataFiles(filename):
@@ -55,3 +57,7 @@ def getListOfExperimentDataFiles(filename):
         filelist.append(line.strip())
     experimentData.close()
     return filelist
+
+
+def computeFileHash(fileToHash):
+    return "{0}".format(os.path.getsize(fileToHash))

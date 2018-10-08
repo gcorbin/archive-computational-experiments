@@ -5,6 +5,7 @@ import os
 from subprocess import call, check_call, check_output
 import utils
 import exceptions
+import imp
 
 
 def writeCommitHashToFile(filename,commithash):
@@ -40,7 +41,8 @@ if __name__ == '__main__':
         print 'saving current experiment in project ', projectName
         projectConfig = utils.getProjectConfig(projectName) 
         projectPaths = projectConfig['paths']
-        experimentName = utils.makeUniqueExperimentName(projectName, simulationName)        
+        experimentName = utils.makeUniqueExperimentName(projectName, simulationName)      
+        scriptPath = os.getcwd()  
         experimentPaths = utils.getRelativeExperimentPaths(projectName, experimentName) 
         experimentFiles = utils.getListOfExperimentDataFiles(projectPaths['experiment-data'])
         
@@ -55,6 +57,12 @@ if __name__ == '__main__':
             print 'saving git commit hash...'
             commithash = getGitCommitHash(projectPaths['top'])
             writeCommitHashToFile(experimentPaths['commithash'],commithash)        
+
+            print 'saving command...'
+            if (not os.path.isfile(projectPaths['last-command']) or os.path.getsize(projectPaths['last-command']) == 0):
+                raise Exception('run the experiment successfully using loggedRun before saving')
+            check_call(['cp',projectPaths['last-command'],experimentPaths['last-command']])
+
             
             print 'saving experiment files...'
             for exfile in experimentFiles:
@@ -62,9 +70,28 @@ if __name__ == '__main__':
                 toFile = os.path.join(experimentPaths['data'],exfile)
                 makeAllDirectories(experimentPaths['data'],exfile)
                 check_call(['cp', fromFile, toFile ])
+
+            print 'saving hashes for big files...'
+            if (projectConfig.has_option('paths','get-hashed-files-script')):
+                getHashedFiles = imp.load_source('gethashedfiles',projectPaths['get-hashed-files-script'])
+                savePath = os.getcwd()
+                os.chdir(projectPaths['top'])
+                hfiles = getHashedFiles.getFilesToHash()
+                os.chdir(savePath)
+               
+                hashesFile = open(experimentPaths['hashed-files'],'w')
+                for item in hfiles:
+                    fileToHash = os.path.join(projectPaths['hashed-files-folder'],item)
+                    hashvalue = utils.computeFileHash(fileToHash)
+                    hashesFile.write("{0} {1}\n".format(item, hashvalue))
+                hashesFile.close()                    
+    
             
         except Exception, Message:
-            print 'Cleaning up failed attempt at saving...'
+            print 'Failed in saving:'
+            print Message
+            print 'Cleaning up...'
+            os.chdir(scriptPath)
             check_call(['rm', '-r', experimentPaths['top']])
             raise Exception(Message)
         
