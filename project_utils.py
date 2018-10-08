@@ -2,6 +2,7 @@ import os
 from datetime import date
 from subprocess import call
 from configparser import ConfigParser, ExtendedInterpolation
+import hashlib
 
 
 def getProjectConfig(projectName):
@@ -41,5 +42,16 @@ def getListOfExperimentDataFiles(filename):
     return filelist
 
 
-def computeFileHash(fileToHash):
-    return "{0}".format(os.path.getsize(fileToHash))
+def computeFileHash(fileName):
+    fileHash = hashlib.sha256()
+    
+    bufferSize = 64 * pow(2,10) 
+    fileToHash = open(fileName,'r')
+    while True:
+        chunk = fileToHash.read(bufferSize)
+        if (not chunk):
+            break
+        fileHash.update(chunk)
+    fileToHash.close()
+        
+    return "{0}".format(fileHash.hexdigest())
