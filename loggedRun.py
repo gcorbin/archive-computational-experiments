@@ -28,9 +28,11 @@ if __name__ == '__main__':
         runCommandInFolder(command,projectPaths['build'])
         
         commandfile = open(projectPaths['last-command'],'w')
-        for arg in command:
-            commandfile.write(arg)
-            commandfile.write(' ')
+        
+        for pair in enumerate(command):
+            commandfile.write(pair[1])
+            if pair[0] < len(command) - 1:
+                commandfile.write(' ')
         commandfile.close()
     
         print 'successfully run command in project', projectName
