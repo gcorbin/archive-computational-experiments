@@ -59,7 +59,7 @@ if __name__ == '__main__':
         print 'building the executable...'
         savePath = os.getcwd()
         os.chdir(projectPaths['build'])
-        #status = check_call((projectConfig['settings']['build-command']).split())
+        status = check_call((projectConfig['settings']['build-command']).split())
         os.chdir(savePath)
 
         print 'running the experiment...'
