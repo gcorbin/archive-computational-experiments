@@ -46,7 +46,7 @@ def computeFileHash(fileName, hashAlgorithm):
     fileHash = hashlib.new(hashAlgorithm)
     
     bufferSize = 64 * pow(2,10) 
-    fileToHash = open(fileName,'r')
+    fileToHash = open(fileName,'rb')
     while True:
         chunk = fileToHash.read(bufferSize)
         if (not chunk):
