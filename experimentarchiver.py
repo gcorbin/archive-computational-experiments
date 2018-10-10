@@ -153,6 +153,11 @@ class ExperimentState:
     def read_from_project(self):
         self._commitHash = git_utils.getGitCommitHash(self._projectOptions.path('git-path'))
         self._pathsToParameters = readListFromFile(self._projectOptions.path('parameter-list'))
+        repoIsClean = git_utils.checkIfGitRepoIsClean(self._projectOptions.path('git-path'),
+                                                      self._projectOptions.path('top-path'),
+                                                      self._pathsToParameters)
+        if not repoIsClean:
+            raise Exception('The git repository contains unstaged or uncommitted changes')
         self._inputData = self.hash_input_data()
         self._pathsToOutputData = [] # not yet implemented
         self._command = read_json(self._projectOptions.path('last-command'))
@@ -160,6 +165,12 @@ class ExperimentState:
 
 
     def restore_to_project(self):
+        pathsToParameters = readListFromFile(self._projectOptions.path('parameter-list'))
+        repoIsClean = git_utils.checkIfGitRepoIsClean(self._projectOptions.path('git-path'),
+                                                      self._projectOptions.path('top-path'),
+                                                      pathsToParameters)
+        if not repoIsClean:
+            raise Exception('The git repository contains unstaged or uncommitted changes')
         git_utils.checkoutGitCommit(self._projectOptions.path('git-path'),self._commitHash)
         copy_files(self._archiveOptions.path('parameter-path'),
                    self._projectOptions.path('top-path'),
@@ -174,7 +185,7 @@ class ExperimentState:
 
 
     def read_from_archive(self):
-        self._commitHash = git_utils.readCommitHashFromFile(self._archiveOptions.path('commit-hash'))
+        self._commitHash = read_json(self._archiveOptions.path('commit-hash'))
         self._pathsToParameters = read_json(self._archiveOptions.path('parameter-list'))
         self._inputData = read_json(self._archiveOptions.path('input-files')) 
         self.verify_hashes()
@@ -186,7 +197,7 @@ class ExperimentState:
     def write_to_archive(self):
         make_directory_if_nonexistent(self._archiveOptions.path('archive-path'))
         make_directory_if_nonexistent(self._archiveOptions.path('experiment-path'))
-        git_utils.writeCommitHashToFile(self._archiveOptions.path('commit-hash'),self._commitHash) 
+        write_json(self._commitHash, self._archiveOptions.path('commit-hash')) 
         make_directory_if_nonexistent(self._archiveOptions.path('parameter-path'))
         write_json(self._pathsToParameters,self._archiveOptions.path('parameter-list'))
         copy_files(self._projectOptions.path('top-path'),
