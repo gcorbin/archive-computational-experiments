@@ -3,6 +3,8 @@ import os
 import json
 import shutil
 import subprocess
+from datetime import date
+import hashlib
 
 from projectoptions import ProjectOptions
 from archiveoptions import ArchiveOptions
@@ -98,7 +100,7 @@ def copy_files(fromPath,toPath,files,createDirectories=False):
         if os.path.isabs(relPath):
             raise Exception('Only relative paths allowed')
         fromFile = os.path.join(fromPath,relPath)
-        toFile = os.path.join(toPath,path)
+        toFile = os.path.join(toPath,relPath)
         if createDirectories: 
             make_all_directories(os.path.dirname(toFile))
         shutil.copy2(fromFile, toFile)
@@ -158,7 +160,7 @@ class ExperimentState:
 
 
     def restore_to_project(self):
-        git_utils.checkoutGitCommit(self._projectOptions.path('git'),self._commitHash)
+        git_utils.checkoutGitCommit(self._projectOptions.path('git-path'),self._commitHash)
         copy_files(self._archiveOptions.path('parameter-path'),
                    self._projectOptions.path('top-path'),
                    self._pathsToParameters,
@@ -200,7 +202,7 @@ class ExperimentState:
 def split_archive_and_experiment_name(path):
     if os.path.isabs(path):
         raise Exception('Only relative paths allowed')
-    parts = split_all_parts(paths)
+    parts = split_all_parts(path)
     if len(parts) != 2:
         raise Exception('Only paths with exactly 2 parts are allowed')
     return parts
@@ -210,7 +212,7 @@ class ExperimentArchiver:
     def __init__(self, archiveName):
         self._archiveName = archiveName
         optionsFile = os.path.join(archiveName,'project.ini')
-        self._projectOptions = projectoptions.ProjectOptions(optionsFile)
+        self._projectOptions = ProjectOptions(optionsFile)
         self._logger = None
 
     def find_free_experiment_name(self,rawName):
@@ -233,20 +235,24 @@ class ExperimentArchiver:
         finally:
             os.chdir(savePath)
             write_json(commandStatus,
-                       self.projectOptions.path('last-command'))
+                       self._projectOptions.path('last-command'))
         return commandStatus
 
     def archive(self,rawName):
         experimentName = self.find_free_experiment_name(rawName)
-        archiveOptions = archiveoptions.ArchiveOptions(self._archiveName,experimentName)
-        state = ExperimentState(self._projectOptions,self._archiveOptions)
+        archiveOptions = ArchiveOptions(self._archiveName,experimentName)
+        state = ExperimentState(self._projectOptions,archiveOptions)
         state.read_from_project()
-        state.write_to_archive()
+        try:
+            state.write_to_archive()
+        except:
+            shutil.rmtree(archiveOptions.path('experiment-path'),ignore_errors=True)
+            raise
         return state
 
     def restore(self,experimentName):
-        archiveOptions = archiveoptions.ArchiveOptions(self._archiveName,experimentName)
-        state = ExperimentState(self._projectOptions,self._archiveOptions)
+        archiveOptions = ArchiveOptions(self._archiveName,experimentName)
+        state = ExperimentState(self._projectOptions,archiveOptions)
         state.read_from_archive()
         state.restore_to_project()
         return state
