@@ -6,8 +6,21 @@ import subprocess
 
 from projectoptions import ProjectOptions
 from archiveoptions import ArchiveOptions
-import project_utils
 import git_utils
+
+def computeFileHash(fileName, hashAlgorithm):
+    fileHash = hashlib.new(hashAlgorithm)
+    
+    bufferSize = 64 * pow(2,10) 
+    fileToHash = open(fileName,'rb')
+    while True:
+        chunk = fileToHash.read(bufferSize)
+        if (not chunk):
+            break
+        fileHash.update(chunk)
+    fileToHash.close()
+        
+    return "{0}".format(fileHash.hexdigest())
 
 def readListFromFile(filename):
     resultList = []
@@ -91,14 +104,14 @@ class ExperimentState:
         data = []
         for relPath in relativePathsToInputData:
             absPath = os.path.join(self._projectOptions.path('input-data-path'),relPath)
-            fileHash = project_utils.computeFileHash(absPath,hashAlgorithm)
+            fileHash = computeFileHash(absPath,hashAlgorithm)
             data.append((relPath, hashAlgorithm, fileHash))
         return data
 
     def verify_hashes(self):
         for (relPath, hashAlgorithm, storedHash) in self._inputData:
             absPath = os.path.join(self._projectOptions.path('input-data-path'),relPath)
-            computedHash = project_utils.computeFileHash(absPath,hashAlgorithm)
+            computedHash = computeFileHash(absPath,hashAlgorithm)
             if (storedHash != computedHash):
                 raise Exception("The stored and computed {0} hashes for the file {1} differ: {2} != {3}".format(hashAlgorithm,absPath,storedHash,computedHash))
 
@@ -113,6 +126,10 @@ class ExperimentState:
             
     def get_command(self):
         return self._command
+    
+    def update_command_status(self):
+        self._command = read_json(self._projectOptions.path('last-command'))
+        
 
     def read_from_project(self):
         self._commitHash = git_utils.getGitCommitHash(self._projectOptions.path('git-path'))
@@ -185,15 +202,15 @@ class ExperimentArchiver:
     
     def run_and_record(self,command):
         savePath = os.getcwd()
-        success = False
+        commandStatus = {'status':1,'command':command}
         try:
             os.chdir(self._projectOptions.path('build-path'))
-            subprocess.check_call(command)
-            success = True
+            commandStatus['status'] = subprocess.call(command)
         finally:
             os.chdir(savePath)
-            write_json({'success':sucess,'command':command},
+            write_json(commandStatus,
                        self.projectOptions.path('last-command'))
+        return commandStatus
 
     def archive(self,rawName):
         experimentName = self.find_free_experiment_name(rawName)
@@ -217,7 +234,8 @@ class ExperimentArchiver:
     
     def restore_and_run(self):
         state = self.restore(experimentName)
-        command = state.get_command()
-        self.run_and_record(command)
+        command = state.get_command()['command']
+        commandStatus = self.run_and_record(command)
+        state.update_command_status()
         return state
     

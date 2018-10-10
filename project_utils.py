@@ -41,17 +41,3 @@ def getListOfExperimentDataFiles(filename):
     experimentData.close()
     return filelist
 
-
-def computeFileHash(fileName, hashAlgorithm):
-    fileHash = hashlib.new(hashAlgorithm)
-    
-    bufferSize = 64 * pow(2,10) 
-    fileToHash = open(fileName,'rb')
-    while True:
-        chunk = fileToHash.read(bufferSize)
-        if (not chunk):
-            break
-        fileHash.update(chunk)
-    fileToHash.close()
-        
-    return "{0}".format(fileHash.hexdigest())
