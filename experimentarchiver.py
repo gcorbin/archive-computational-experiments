@@ -47,6 +47,23 @@ def make_directory_if_nonexistent(path):
         os.mkdir(path)
 
 
+#see https://www.oreilly.com/library/view/python-cookbook/0596001673/ch04s16.html
+def split_all_parts(path):
+    allparts = []
+    while True:
+        parts = os.path.split(path)
+        if parts[0] == path:  # sentinel for absolute paths
+            allparts.insert(0, parts[0])
+            break
+        elif parts[1] == path: # sentinel for relative paths
+            allparts.insert(0, parts[1])
+            break
+        else:
+            path = parts[0]
+            allparts.insert(0, parts[1])
+    return allparts
+
+
 def split_all_subpaths(path):
     subs = []
     while path:
@@ -180,6 +197,13 @@ class ExperimentState:
         #environment not yet implemented
 
 
+def split_archive_and_experiment_name(path):
+    if os.path.isabs(path):
+        raise Exception('Only relative paths allowed')
+    parts = split_all_parts(paths)
+    if len(parts) != 2:
+        raise Exception('Only paths with exactly 2 parts are allowed')
+    return parts
 
 class ExperimentArchiver:
 
@@ -232,7 +256,7 @@ class ExperimentArchiver:
         state = self.archive(rawName)
         return state
     
-    def restore_and_run(self):
+    def restore_and_run(self,experimentName):
         state = self.restore(experimentName)
         command = state.get_command()['command']
         commandStatus = self.run_and_record(command)
