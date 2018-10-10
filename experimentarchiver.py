@@ -2,6 +2,7 @@ import imp
 import os
 import json
 import shutil
+import subprocess
 
 from projectoptions import ProjectOptions
 from archiveoptions import ArchiveOptions
@@ -106,9 +107,12 @@ class ExperimentState:
         savePath = os.getcwd()
         try:
             os.chdir(self._projectOptions.path('build-path'))
-            check_call(buildCommand)
+            subprocess.check_call(buildCommand)
         finally:
             os.chdir(savePath)
+            
+    def get_command(self):
+        return self._command
 
     def read_from_project(self):
         self._commitHash = git_utils.getGitCommitHash(self._projectOptions.path('git-path'))
@@ -161,25 +165,59 @@ class ExperimentState:
 
 
 class ExperimentArchiver:
-    
-    def __init__(self, archiverOptions, projectOptions):
-        self.archiverOptions = archiverOptions
-        self.projectOptions = projectOptions
-        self.logger = None
+
+    def __init__(self, archiveName):
+        self._archiveName = archiveName
+        optionsFile = os.path.join(archiveName,'project.ini')
+        self._projectOptions = projectoptions.ProjectOptions(optionsFile)
+        self._logger = None
+
+    def find_free_experiment_name(self,rawName):
+        today = date.today().strftime('%Y%m%d')   
+        number = -1
+        experimentPath = ''
+        experimentName = ''
+        while experimentPath == '' or os.path.isdir(experimentPath) :
+            number += 1
+            experimentName = "{0}_{1}_{2:02d}".format(today, rawName, number)
+            experimentPath = os.path.join(self._archiveName,experimentName)
+        return experimentName
     
     def run_and_record(self,command):
-        pass
+        savePath = os.getcwd()
+        success = False
+        try:
+            os.chdir(self._projectOptions.path('build-path'))
+            subprocess.check_call(command)
+            success = True
+        finally:
+            os.chdir(savePath)
+            write_json({'success':sucess,'command':command},
+                       self.projectOptions.path('last-command'))
+
+    def archive(self,rawName):
+        experimentName = self.find_free_experiment_name(rawName)
+        archiveOptions = archiveoptions.ArchiveOptions(self._archiveName,experimentName)
+        state = ExperimentState(self._projectOptions,self._archiveOptions)
+        state.read_from_project()
+        state.write_to_archive()
+        return state
+
+    def restore(self,experimentName):
+        archiveOptions = archiveoptions.ArchiveOptions(self._archiveName,experimentName)
+        state = ExperimentState(self._projectOptions,self._archiveOptions)
+        state.read_from_archive()
+        state.restore_to_project()
+        return state
     
-    def archive(self):
-        pass
-    
-    def restore(self):
-        pass
-    
-    def run_and_archive(self):
-        pass
+    def run_and_archive(self,rawName,command):
+        self.run_and_record(command)
+        state = self.archive(rawName)
+        return state
     
     def restore_and_run(self):
-        pass
-    
+        state = self.restore(experimentName)
+        command = state.get_command()
+        self.run_and_record(command)
+        return state
     
