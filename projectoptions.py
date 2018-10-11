@@ -15,6 +15,8 @@ class ProjectOptions:
         else:
             self._options['build-command'] = ''
         self._options['hash-algorithm'] = config.get('options','hash-algorithm',fallback='sha256')
+        extraArgs = config.get('options','append-arguments',fallback='')
+        self._options['append-arguments'] = extraArgs.split(' ')
         
         self._paths = {}
         for key in ['git-path', 'top-path', 'build-path', 'input-data-path',

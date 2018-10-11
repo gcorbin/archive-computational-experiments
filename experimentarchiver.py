@@ -1,5 +1,6 @@
 import imp
 import os
+import copy
 import json
 import shutil
 import subprocess
@@ -242,7 +243,10 @@ class ExperimentArchiver:
         commandStatus = {'status':1,'command':command}
         try:
             os.chdir(self._projectOptions.path('build-path'))
-            commandStatus['status'] = subprocess.call(command)
+            extraArgs = self._projectOptions.option('append-arguments')
+            augmentedCommand = copy.copy(command)
+            augmentedCommand.extend(extraArgs)
+            commandStatus['status'] = subprocess.call(augmentedCommand)
         finally:
             os.chdir(savePath)
             write_json(commandStatus,
