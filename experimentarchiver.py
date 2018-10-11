@@ -15,6 +15,7 @@ def split_archive_and_experiment_name(path):
     if os.path.isabs(path):
         raise Exception('Only relative paths allowed')
     parts = os_utils.split_all_parts(path)
+    parts = [p for p in parts if p != '']
     if len(parts) != 2:
         raise Exception('Only paths with exactly 2 parts are allowed')
     return parts
