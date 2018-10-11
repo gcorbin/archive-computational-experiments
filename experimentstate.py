@@ -63,7 +63,7 @@ class ExperimentState:
         self._command = []
         self._environment = None
         
-    def hash_input_data(self):
+    def _hash_input_data(self):
         relativePathsToInputData = getPathsToInputData(self._projectOptions.path('get-input-files'))
         hashAlgorithm =  self._projectOptions.option('hash-algorithm')        
         data = []
@@ -73,7 +73,7 @@ class ExperimentState:
             data.append((relPath, hashAlgorithm, fileHash))
         return data
 
-    def verify_hashes(self):
+    def _verify_hashes(self):
         for (relPath, hashAlgorithm, storedHash) in self._inputData:
             absPath = os.path.join(self._projectOptions.path('input-data-path'),relPath)
             computedHash = computeFileHash(absPath,hashAlgorithm)
@@ -104,7 +104,7 @@ class ExperimentState:
                                                       self._pathsToParameters)
         if not repoIsClean:
             raise Exception('The git repository contains unstaged or uncommitted changes')
-        self._inputData = self.hash_input_data()
+        self._inputData = self._hash_input_data()
         self._pathsToOutputData = [] # not yet implemented
         self._command = read_json(self._projectOptions.path('last-command'))
         self._environment = None # not yet implemented
@@ -134,7 +134,7 @@ class ExperimentState:
         self._commitHash = read_json(self._archiveOptions.path('commit-hash'))
         self._pathsToParameters = read_json(self._archiveOptions.path('parameter-list'))
         self._inputData = read_json(self._archiveOptions.path('input-files')) 
-        self.verify_hashes()
+        self._verify_hashes()
         self._pathsToOutputData = [] # not yet implemented
         self._command = read_json(self._archiveOptions.path('last-command'))
         self._environment = None # not yet implemented
