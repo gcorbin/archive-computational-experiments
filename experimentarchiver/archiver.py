@@ -4,11 +4,10 @@ import shutil
 import subprocess
 from datetime import date
 
-from projectoptions import ProjectOptions
-from archiveoptions import ArchiveOptions
-import os_utils
-import git_utils
-from  experimentstate import ExperimentState, read_json, write_json
+import experimentarchiver.os_utils as os_utils
+from experimentarchiver.projectoptions import ProjectOptions
+from experimentarchiver.archiveoptions import ArchiveOptions
+from experimentarchiver.state import ExperimentState, write_json
 
 
 def split_archive_and_experiment_name(path):

@@ -1,8 +1,7 @@
 #!/usr/bin/python
 
-import sys 
-import os
-import experimentarchiver
+import sys
+from experimentarchiver.archiver import ExperimentArchiver
 
 
 if __name__ == '__main__': 
@@ -12,7 +11,7 @@ if __name__ == '__main__':
     projectName = sys.argv[1]
     command = sys.argv[2:]
     print 'Running command {0} in project {1} ...'.format(str(command),projectName)
-    archiver = experimentarchiver.ExperimentArchiver(projectName)
+    archiver = ExperimentArchiver(projectName)
     archiver.run_and_record(command)
     sys.exit(0)
 

@@ -6,8 +6,8 @@ import imp
 
 from projectoptions import ProjectOptions
 from archiveoptions import ArchiveOptions
-import os_utils
-import git_utils
+import experimentarchiver.os_utils as os_utils
+import experimentarchiver.git_utils as git_utils
 
 def computeFileHash(fileName, hashAlgorithm):
     fileHash = hashlib.new(hashAlgorithm)

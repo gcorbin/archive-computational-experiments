@@ -1,6 +1,5 @@
 import os
-import sys
-from subprocess import  call, check_call, check_output
+from subprocess import  check_call, check_output
 
 def makeGitDiffExcludeList(excludeList):
     modifiedList = []
