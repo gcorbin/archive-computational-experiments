@@ -19,68 +19,67 @@ def split_archive_and_experiment_name(path):
         raise Exception('Only paths with exactly 2 parts are allowed')
     return parts
 
+
 class ExperimentArchiver:
 
-    def __init__(self, archiveName):
-        self._archiveName = archiveName
-        optionsFile = os.path.join(archiveName,'project.ini')
-        self._projectOptions = ProjectOptions(optionsFile)
+    def __init__(self, archive_name):
+        self._archiveName = archive_name
+        options_file = os.path.join(archive_name, 'project.ini')
+        self._projectOptions = ProjectOptions(options_file)
         self._logger = None
 
-    def find_free_experiment_name(self,rawName):
+    def find_free_experiment_name(self, raw_name):
         today = date.today().strftime('%Y%m%d')   
         number = -1
-        experimentPath = ''
-        experimentName = ''
-        while experimentPath == '' or os.path.isdir(experimentPath) :
+        experiment_path = ''
+        experiment_name = ''
+        while experiment_path == '' or os.path.isdir(experiment_path):
             number += 1
-            experimentName = "{0}_{1}_{2:02d}".format(today, rawName, number)
-            experimentPath = os.path.join(self._archiveName,experimentName)
-        return experimentName
+            experiment_name = "{0}_{1}_{2:02d}".format(today, raw_name, number)
+            experiment_path = os.path.join(self._archiveName, experiment_name)
+        return experiment_name
     
-    def run_and_record(self,command):
-        savePath = os.getcwd()
-        commandStatus = {'status':1,'command':command}
+    def run_and_record(self, command):
+        save_path = os.getcwd()
+        command_record = {'status': 1, 'command': command}
         try:
             os.chdir(self._projectOptions.path('build-path'))
-            extraArgs = self._projectOptions.option('append-arguments')
-            augmentedCommand = copy.copy(command)
-            augmentedCommand.extend(extraArgs)
-            commandStatus['status'] = subprocess.call(augmentedCommand)
+            extra_args = self._projectOptions.option('append-arguments')
+            augmented_command = copy.copy(command)
+            augmented_command.extend(extra_args)
+            command_record['status'] = subprocess.call(augmented_command)
         finally:
-            os.chdir(savePath)
-            write_json(commandStatus,
-                       self._projectOptions.path('last-command'))
-        return commandStatus
+            os.chdir(save_path)
+            write_json(command_record, self._projectOptions.path('last-command'))
+        return command_record
 
-    def archive(self,rawName):
-        experimentName = self.find_free_experiment_name(rawName)
-        archiveOptions = ArchiveOptions(self._archiveName,experimentName)
-        state = ExperimentState(self._projectOptions,archiveOptions)
+    def archive(self, raw_name):
+        experiment_name = self.find_free_experiment_name(raw_name)
+        archive_opts = ArchiveOptions(self._archiveName, experiment_name)
+        state = ExperimentState(self._projectOptions, archive_opts)
         state.read_from_project()
         try:
             state.write_to_archive()
         except:
-            shutil.rmtree(archiveOptions.path('experiment-path'),ignore_errors=True)
+            shutil.rmtree(archive_opts.path('experiment-path'), ignore_errors=True)
             raise
         return state
 
-    def restore(self,experimentName):
-        archiveOptions = ArchiveOptions(self._archiveName,experimentName)
-        state = ExperimentState(self._projectOptions,archiveOptions)
+    def restore(self, experiment_name):
+        archive_opts = ArchiveOptions(self._archiveName, experiment_name)
+        state = ExperimentState(self._projectOptions, archive_opts)
         state.read_from_archive()
         state.restore_to_project()
         return state
     
-    def run_and_archive(self,rawName,command):
+    def run_and_archive(self, raw_name, command):
         self.run_and_record(command)
-        state = self.archive(rawName)
+        state = self.archive(raw_name)
         return state
     
-    def restore_and_run(self,experimentName):
-        state = self.restore(experimentName)
+    def restore_and_run(self, experiment_name):
+        state = self.restore(experiment_name)
         command = state.get_command()['command']
-        commandStatus = self.run_and_record(command)
+        self.run_and_record(command)
         state.update_command_status()
         return state
-    
