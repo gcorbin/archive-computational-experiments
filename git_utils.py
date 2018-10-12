@@ -22,6 +22,9 @@ def checkIfGitRepoIsClean(pathToRepo,pathToProject,excludeList):
 
 def getGitCommitHash(pathToRepo):
     commithash = check_output(['git','-C',pathToRepo,'rev-parse','master'])
+    # In Python 3 the check_output function returns a byte-array,
+    # that has to be converted to a string
+    commithash = commithash.decode('utf-8')
     commithash = commithash.strip('\n').strip()
     return commithash
 
