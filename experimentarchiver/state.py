@@ -97,11 +97,11 @@ class ExperimentState:
         
 
     def read_from_project(self):
-        self._commitHash = git_utils.getGitCommitHash(self._projectOptions.path('git-path'))
+        self._commitHash = git_utils.get_git_commit_hash(self._projectOptions.path('git-path'))
         self._pathsToParameters = readListFromFile(self._projectOptions.path('parameter-list'))
-        repoIsClean = git_utils.checkIfGitRepoIsClean(self._projectOptions.path('git-path'),
-                                                      self._projectOptions.path('top-path'),
-                                                      self._pathsToParameters)
+        repoIsClean = git_utils.is_git_repo_clean(self._projectOptions.path('git-path'),
+                                                  self._projectOptions.path('top-path'),
+                                                  self._pathsToParameters)
         if not repoIsClean:
             raise Exception('The git repository contains unstaged or uncommitted changes')
         self._inputData = self._hash_input_data()
@@ -112,16 +112,16 @@ class ExperimentState:
 
     def restore_to_project(self):
         pathsToParameters = readListFromFile(self._projectOptions.path('parameter-list'))
-        repoIsClean = git_utils.checkIfGitRepoIsClean(self._projectOptions.path('git-path'),
-                                                      self._projectOptions.path('top-path'),
-                                                      pathsToParameters)
+        repoIsClean = git_utils.is_git_repo_clean(self._projectOptions.path('git-path'),
+                                                  self._projectOptions.path('top-path'),
+                                                  pathsToParameters)
         if not repoIsClean:
             raise Exception('The git repository contains unstaged or uncommitted changes')
-        git_utils.checkoutGitCommit(self._projectOptions.path('git-path'),self._commitHash)
+        git_utils.checkout_git_commit(self._projectOptions.path('git-path'), self._commitHash)
         os_utils.copy_files(self._archiveOptions.path('parameter-path'),
-                   self._projectOptions.path('top-path'),
-                   self._pathsToParameters,
-                   createDirectories=False)
+                            self._projectOptions.path('top-path'),
+                            self._pathsToParameters,
+                            create_directories=False)
         # nothing to do for input data
         # output data not implemented
         write_json(self._command, self._projectOptions.path('last-command'))
@@ -147,9 +147,9 @@ class ExperimentState:
         os_utils.make_directory_if_nonexistent(self._archiveOptions.path('parameter-path'))
         write_json(self._pathsToParameters,self._archiveOptions.path('parameter-list'))
         os_utils.copy_files(self._projectOptions.path('top-path'),
-                   self._archiveOptions.path('parameter-path'),
-                   self._pathsToParameters,
-                   createDirectories=True)
+                            self._archiveOptions.path('parameter-path'),
+                            self._pathsToParameters,
+                            create_directories=True)
         write_json(self._inputData,self._archiveOptions.path('input-files'))
         # output data not yet implemented
         write_json(self._command,self._archiveOptions.path('last-command'))
