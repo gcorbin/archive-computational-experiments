@@ -51,3 +51,20 @@ def copy_files(from_path, to_path, files, create_directories=False):
         if create_directories:
             make_all_directories(os.path.dirname(to_file))
         shutil.copy2(from_file, to_file)
+
+
+class ChdirContext:
+
+    def __init__(self, path):
+        self._path = path
+        self._cwd = None
+
+    def __enter__(self):
+        self._cwd = os.getcwd()
+        os.chdir(self._path)
+        return os.path.join(self._cwd, self._path)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.chdir(self._cwd)
+        return False
+

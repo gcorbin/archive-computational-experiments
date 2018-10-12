@@ -32,14 +32,9 @@ def read_lines_into_list(filename):
 
 def get_paths_to_input_data(path_to_script):
     imported_module = imp.load_source('tmp_script_module', path_to_script)
-    # todo: write a class that can be used in a 'with' statement that changes the directory
-    save_path = os.getcwd()
-    try:
-        execute_path = os.path.dirname(path_to_script)
-        os.chdir(execute_path)
+    execute_path = os.path.dirname(path_to_script)
+    with os_utils.ChdirContext(execute_path):
         path_list = imported_module.getFilesToHash()
-    finally:
-        os.chdir(save_path)
     return path_list
 
 
@@ -87,12 +82,8 @@ class ExperimentState:
 
     def _build_project(self):
         build_command = self._projectOptions.option('build-command').strip().split()
-        save_path = os.getcwd()
-        try:
-            os.chdir(self._projectOptions.path('build-path'))
+        with os_utils.ChdirContext(self._projectOptions.path('build-path')):
             subprocess.check_call(build_command)
-        finally:
-            os.chdir(save_path)
             
     def get_command(self):
         return self._command

@@ -40,16 +40,14 @@ class ExperimentArchiver:
         return experiment_name
     
     def run_and_record(self, command):
-        save_path = os.getcwd()
         command_record = {'status': 1, 'command': command}
         try:
-            os.chdir(self._projectOptions.path('build-path'))
-            extra_args = self._projectOptions.option('append-arguments')
-            augmented_command = copy.copy(command)
-            augmented_command.extend(extra_args)
-            command_record['status'] = subprocess.call(augmented_command)
+            with os_utils.ChdirContext(self._projectOptions.path('build-path')):
+                extra_args = self._projectOptions.option('append-arguments')
+                augmented_command = copy.copy(command)
+                augmented_command.extend(extra_args)
+                command_record['status'] = subprocess.call(augmented_command)
         finally:
-            os.chdir(save_path)
             write_json(command_record, self._projectOptions.path('last-command'))
         return command_record
 
