@@ -1,9 +1,12 @@
 import os
 import shutil
+import logging
 
+logger = logging.getLogger(__name__)
 
 def make_directory_if_nonexistent(path):
     if not os.path.isdir(path):
+        logger.debug('Making new directory %s', path)
         os.mkdir(path)
 
 
@@ -50,10 +53,11 @@ def copy_files(from_path, to_path, files, create_directories=False):
         to_file = os.path.join(to_path, relPath)
         if create_directories:
             make_all_directories(os.path.dirname(to_file))
+        logger.debug('Copying file from %s to %s', from_file, to_file)
         shutil.copy2(from_file, to_file)
 
 
-class ChdirContext:
+class ChangedDirectory:
 
     def __init__(self, path):
         self._path = path
@@ -61,10 +65,13 @@ class ChdirContext:
 
     def __enter__(self):
         self._cwd = os.getcwd()
+        newdir = os.path.join(self._cwd, self._path)
+        logger.debug('Entering working directory %s', newdir)
         os.chdir(self._path)
-        return os.path.join(self._cwd, self._path)
+        return newdir
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        logger.debug('Changing workin directory back to %s', self._cwd)
         os.chdir(self._cwd)
         return False
 

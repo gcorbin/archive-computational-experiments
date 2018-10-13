@@ -33,7 +33,7 @@ def read_lines_into_list(filename):
 def get_paths_to_input_data(path_to_script):
     imported_module = imp.load_source('tmp_script_module', path_to_script)
     execute_path = os.path.dirname(path_to_script)
-    with os_utils.ChdirContext(execute_path):
+    with os_utils.ChangedDirectory(execute_path):
         path_list = imported_module.getFilesToHash()
     return path_list
 
@@ -82,7 +82,7 @@ class ExperimentState:
 
     def _build_project(self):
         build_command = self._projectOptions.option('build-command').strip().split()
-        with os_utils.ChdirContext(self._projectOptions.path('build-path')):
+        with os_utils.ChangedDirectory(self._projectOptions.path('build-path')):
             subprocess.check_call(build_command)
             
     def get_command(self):

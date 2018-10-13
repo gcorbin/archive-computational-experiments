@@ -45,7 +45,7 @@ class ExperimentArchiver:
     def run_and_record(self, command):
         command_record = {'status': 1, 'command': command}
         try:
-            with os_utils.ChdirContext(self._projectOptions.path('build-path')):
+            with os_utils.ChangedDirectory(self._projectOptions.path('build-path')):
                 extra_args = self._projectOptions.option('append-arguments')
                 augmented_command = copy.copy(command)
                 augmented_command.extend(extra_args)
