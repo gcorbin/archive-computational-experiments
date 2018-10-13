@@ -1,9 +1,14 @@
 import configparser
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectOptions:
 
     def __init__(self, options_file_name):
+        logger.debug('Reading options from file %s', options_file_name)
         config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
         config.read(options_file_name)
         

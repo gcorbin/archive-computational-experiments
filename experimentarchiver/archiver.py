@@ -10,6 +10,7 @@ from experimentarchiver.projectoptions import ProjectOptions
 from experimentarchiver.archiveoptions import ArchiveOptions
 from experimentarchiver.state import ExperimentState, write_json
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,7 +30,6 @@ class ExperimentArchiver:
         self._archiveName = archive_name
         options_file = os.path.join(archive_name, 'project.ini')
         self._projectOptions = ProjectOptions(options_file)
-        self._logger = None
 
     def find_free_experiment_name(self, raw_name):
         today = date.today().strftime('%Y%m%d')   
@@ -43,30 +43,43 @@ class ExperimentArchiver:
         return experiment_name
     
     def run_and_record(self, command):
+        logger.info('Trying recorded run.')
         command_record = {'status': 1, 'command': command}
         try:
             with os_utils.ChangedDirectory(self._projectOptions.path('build-path')):
                 extra_args = self._projectOptions.option('append-arguments')
                 augmented_command = copy.copy(command)
                 augmented_command.extend(extra_args)
+                logger.debug('Executing command %s', augmented_command)
                 command_record['status'] = subprocess.call(augmented_command)
         finally:
+            logger.debug('Writing command status to %s', self._projectOptions.path('last-command'))
             write_json(command_record, self._projectOptions.path('last-command'))
+
+        if command_record['status'] != 0:
+            logger.warning('Command exited with non-zero status: %s', command_record['status'])
+        else:
+            logger.info('Successfully executed the command.')
         return command_record
 
     def archive(self, raw_name):
+        logger.info('Archiving experiment for project %s', self._archiveName)
         experiment_name = self.find_free_experiment_name(raw_name)
+        logger.info('Experiment name is %s', experiment_name)
         archive_opts = ArchiveOptions(self._archiveName, experiment_name)
         state = ExperimentState(self._projectOptions, archive_opts)
         state.read_from_project()
         try:
             state.write_to_archive()
         except:
+            logger.warning('Cleaning up failed archiving attempt.')
+            logger.debug('Removing directory %s', archive_opts.path('experiment-path'))
             shutil.rmtree(archive_opts.path('experiment-path'), ignore_errors=True)
             raise
         return state
 
     def restore(self, experiment_name):
+        logger.info('Restoring experiment %s to project %s', experiment_name, self._archiveName)
         archive_opts = ArchiveOptions(self._archiveName, experiment_name)
         state = ExperimentState(self._projectOptions, archive_opts)
         state.read_from_archive()

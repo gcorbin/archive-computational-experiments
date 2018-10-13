@@ -2,7 +2,9 @@ import os
 import shutil
 import logging
 
+
 logger = logging.getLogger(__name__)
+
 
 def make_directory_if_nonexistent(path):
     if not os.path.isdir(path):
@@ -71,7 +73,7 @@ class ChangedDirectory:
         return newdir
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        logger.debug('Changing workin directory back to %s', self._cwd)
+        logger.debug('Changing working directory back to %s', self._cwd)
         os.chdir(self._cwd)
         return False
 
