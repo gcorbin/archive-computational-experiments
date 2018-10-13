@@ -1,5 +1,8 @@
 import os
 from subprocess import check_call, check_output
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def make_git_diff_exclude_list(excludelist):
@@ -10,12 +13,15 @@ def make_git_diff_exclude_list(excludelist):
 
 
 def is_git_repo_clean(path_to_repo, path_to_project, excludelist):
+    logger.info('Checking if the git repository is clean.')
+    logger.debug('Repo path: %s',path_to_repo)
     command = ['git', '-C', path_to_project, 'diff', 'HEAD', '--quiet', '--', path_to_repo]
     for item in make_git_diff_exclude_list(excludelist):
         command.append(item)
     commandstr = ''
     for arg in command:
         commandstr = commandstr + ' ' + arg
+    logger.debug('Executing command %s',commandstr)
     # somehow the subprocess.call method does not work here
     # todo: check if using call with the shell=True argument will work
     status = os.system(commandstr)
@@ -23,7 +29,11 @@ def is_git_repo_clean(path_to_repo, path_to_project, excludelist):
 
 
 def get_git_commit_hash(path_to_repo):
-    commithash = check_output(['git', '-C', path_to_repo, 'rev-parse', 'master'])
+    logger.info('Retrieving Commit hash from repository.')
+    logger.debug('Repo path: %s', path_to_repo)
+    command = ['git', '-C', path_to_repo, 'rev-parse', 'master']
+    logger.debug('Executing command %s', str(command))
+    commithash = check_output(command)
     # In Python 3 the check_output function returns a byte-array,
     # that has to be converted to a string
     commithash = commithash.decode('utf-8')
@@ -32,4 +42,8 @@ def get_git_commit_hash(path_to_repo):
 
 
 def checkout_git_commit(path_to_repo, commithash):
-    check_call(['git', '-C', path_to_repo, 'checkout', commithash])
+    logger.info('Checking out git repository.')
+    logger.debug('Repo path: %s', path_to_repo)
+    command = ['git', '-C', path_to_repo, 'checkout', commithash]
+    logger.debug('Executing command %s', str(command) )
+    check_call(command)
