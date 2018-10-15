@@ -76,4 +76,3 @@ class ChangedDirectory:
         logger.debug('Changing working directory back to %s', self._cwd)
         os.chdir(self._cwd)
         return False
-

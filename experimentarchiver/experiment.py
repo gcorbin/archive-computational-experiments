@@ -59,7 +59,7 @@ class Experiment:
             raise Exception('Archiving failed runs is not allowed')
         try:
             self.write_to_archive(state, project)
-        except:
+        except Exception:
             logger.warning('Cleaning up failed archiving attempt.')
             logger.debug('Removing directory %s', self.path('experiment-path'))
             shutil.rmtree(self.path('experiment-path'), ignore_errors=True)

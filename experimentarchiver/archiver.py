@@ -7,7 +7,6 @@ import logging
 import experimentarchiver.os_utils as os_utils
 from experimentarchiver.project import Project
 from experimentarchiver.experiment import Experiment
-from experimentarchiver.state import ExperimentState
 
 
 logger = logging.getLogger(__name__)

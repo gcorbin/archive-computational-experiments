@@ -6,7 +6,7 @@ def set_default_logging_behavior(logfile):
 
     logger.setLevel(logging.DEBUG)
 
-    fh = logging.FileHandler('{0}.log'.format(logfile),mode='w')
+    fh = logging.FileHandler('{0}.log'.format(logfile), mode='w')
     fh.setLevel(logging.DEBUG)
 
     ch = logging.StreamHandler()

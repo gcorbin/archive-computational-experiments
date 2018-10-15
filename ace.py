@@ -55,12 +55,14 @@ if __name__ == '__main__':
     elif args.mode == 'restore':
         archiveName, experimentName = split_archive_and_experiment_name(args.experiment)
         if not archiveName == os.path.normpath(args.archive):
-            raise Exception('Archive names do not match: {0} != {1}'.format(archiveName, os.path.normpath(args.archive)))
+            raise Exception('Archive names do not match: {0} != {1}'
+                            .format(archiveName, os.path.normpath(args.archive)))
         archiver.restore(experimentName)
     elif args.mode == 'restore-and-run':
         archiveName, experimentName = split_archive_and_experiment_name(args.experiment)
         if not archiveName == os.path.normpath(args.archive):
-            raise Exception('Archive names do not match: {0} != {1}'.format(archiveName, os.path.normpath(args.archive)))
+            raise Exception('Archive names do not match: {0} != {1}'
+                            .format(archiveName, os.path.normpath(args.archive)))
         archiver.restore_and_run(experimentName)
     elif args.mode == 'run-and-archive':
         archiver.run_and_archive(args.name, args.command)

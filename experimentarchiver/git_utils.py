@@ -15,14 +15,14 @@ def make_git_diff_exclude_list(excludelist):
 
 def is_git_repo_clean(path_to_repo, path_to_project, excludelist):
     logger.info('Checking if the git repository is clean.')
-    logger.debug('... repo path: %s',path_to_repo)
+    logger.debug('... repo path: %s', path_to_repo)
     command = ['git', '-C', path_to_project, 'diff', 'HEAD', '--quiet', '--', path_to_repo]
     for item in make_git_diff_exclude_list(excludelist):
         command.append(item)
     commandstr = ''
     for arg in command:
         commandstr = commandstr + ' ' + arg
-    logger.debug('... executing command: %s',commandstr)
+    logger.debug('... executing command: %s', commandstr)
     # somehow the subprocess.call method does not work here
     # todo: check if using call with the shell=True argument will work
     status = os.system(commandstr)
@@ -46,5 +46,5 @@ def checkout_git_commit(path_to_repo, commithash):
     logger.info('Checking out git repository.')
     logger.debug('... repo path: %s', path_to_repo)
     command = ['git', '-C', path_to_repo, 'checkout', commithash]
-    logger.debug('... executing command %s', str(command) )
+    logger.debug('... executing command %s', str(command))
     check_call(command)
