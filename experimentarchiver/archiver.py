@@ -8,7 +8,7 @@ import logging
 import experimentarchiver.os_utils as os_utils
 from experimentarchiver.projectoptions import ProjectOptions
 from experimentarchiver.archiveoptions import ArchiveOptions
-from experimentarchiver.state import ExperimentState, write_json
+from experimentarchiver.state import ExperimentState, write_json, read_json
 
 
 logger = logging.getLogger(__name__)
@@ -41,26 +41,41 @@ class ExperimentArchiver:
             experiment_name = "{0}_{1}_{2:02d}".format(today, raw_name, number)
             experiment_path = os.path.join(self._archiveName, experiment_name)
         return experiment_name
-    
-    def run_and_record(self, command):
-        logger.info('Trying recorded run.')
+
+    def _run_and_record(self, command):
         command_record = {'status': 1, 'command': command}
         try:
             with os_utils.ChangedDirectory(self._projectOptions.path('build-path')):
                 extra_args = self._projectOptions.option('append-arguments')
-                augmented_command = copy.copy(command)
+                augmented_command = copy.copy(command_record['command'])
                 augmented_command.extend(extra_args)
                 logger.debug('Executing command %s', augmented_command)
                 command_record['status'] = subprocess.call(augmented_command)
         finally:
             logger.debug('Writing command status to %s', self._projectOptions.path('last-command'))
             write_json(command_record, self._projectOptions.path('last-command'))
-
         if command_record['status'] != 0:
             logger.warning('Command exited with non-zero status: %s', command_record['status'])
         else:
             logger.info('Successfully executed the command.')
         return command_record
+
+    def run_last_command(self):
+        logger.info('Trying recorded run, using last recorded command.')
+        last_command_record = self._projectOptions.path('last-command')
+        try:
+            command_record = read_json(last_command_record)
+        except IOError:
+            logger.error('Could not find a record of the last command in %s', last_command_record)
+            logger.error('Nothing will be run.')
+        else:
+            if command_record['status'] != 0:
+                logger.warning('Running a recorded command with non-zero exit status: %s', command_record['status'])
+            return self._run_and_record(command_record['command'])
+    
+    def run(self, command):
+        logger.info('Trying recorded run, using specified command.')
+        return self._run_and_record(command)
 
     def archive(self, raw_name):
         logger.info('Archiving experiment for project %s', self._archiveName)
@@ -87,13 +102,12 @@ class ExperimentArchiver:
         return state
     
     def run_and_archive(self, raw_name, command):
-        self.run_and_record(command)
+        self.run(command)
         state = self.archive(raw_name)
         return state
     
     def restore_and_run(self, experiment_name):
         state = self.restore(experiment_name)
-        command = state.get_command()['command']
-        self.run_and_record(command)
+        self.run_last_command()
         state.update_command_status()
         return state
