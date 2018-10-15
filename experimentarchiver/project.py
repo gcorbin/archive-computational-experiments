@@ -45,7 +45,7 @@ def compute_file_hash(filename, hash_algorithm):
     return "{0}".format(file_hash.hexdigest())
 
 
-class ProjectOptions:
+class Project:
 
     def __init__(self, options_file_name):
         logger.debug('Reading options from file %s', options_file_name)
@@ -135,8 +135,8 @@ class ProjectOptions:
         state.environment = None  # not yet implemented
         return state
 
-    def restore_to_project(self, archive_options):
-        state = archive_options.read_from_archive()
+    def restore_to_project(self, experiment):
+        state = experiment.read_from_archive()
         paths_to_parameters = read_parameter_list(self.path('parameter-list'))
         repo_is_clean = git_utils.is_git_repo_clean(self.path('git-path'),
                                                     self.path('top-path'),
@@ -144,7 +144,7 @@ class ProjectOptions:
         if not repo_is_clean:
             raise Exception('The git repository contains unstaged or uncommitted changes')
         git_utils.checkout_git_commit(self.path('git-path'), state.commitHash)
-        os_utils.copy_files(archive_options.path('parameter-path'),
+        os_utils.copy_files(experiment.path('parameter-path'),
                             self.path('top-path'),
                             state.pathsToParameters,
                             create_directories=False)

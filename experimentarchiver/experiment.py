@@ -8,7 +8,7 @@ import os_utils
 logger = logging.getLogger(__name__)
 
 
-class ArchiveOptions:
+class Experiment:
     
     def __init__(self, archive_path, experiment_name):
         experiment_path = os.path.join(archive_path, experiment_name)
@@ -35,7 +35,7 @@ class ArchiveOptions:
         state.environment = None  # not yet implemented
         return state
 
-    def write_to_archive(self, state, project_options):
+    def write_to_archive(self, state, project):
         logger.info('Writing to archive')
         os_utils.make_directory_if_nonexistent(self.path('archive-path'))
         os_utils.make_directory_if_nonexistent(self.path('experiment-path'))
@@ -43,7 +43,7 @@ class ArchiveOptions:
         experimentstate.write_json(state.commitHash, self.path('commit-hash'))
         os_utils.make_directory_if_nonexistent(self.path('parameter-path'))
         experimentstate.write_json(state.pathsToParameters, self.path('parameter-list'))
-        os_utils.copy_files(project_options.path('top-path'),
+        os_utils.copy_files(project.path('top-path'),
                             self.path('parameter-path'),
                             state.pathsToParameters,
                             create_directories=True)
@@ -52,10 +52,10 @@ class ArchiveOptions:
         experimentstate.write_json(state.command, self.path('last-command'))
         # environment not yet implemented
 
-    def archive_project(self, project_options):
-        state = project_options.read_from_project()
+    def archive_project(self, project):
+        state = project.read_from_project()
         try:
-            self.write_to_archive(state, project_options)
+            self.write_to_archive(state, project)
         except:
             logger.warning('Cleaning up failed archiving attempt.')
             logger.debug('Removing directory %s', self.path('experiment-path'))
