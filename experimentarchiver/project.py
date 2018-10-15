@@ -79,16 +79,21 @@ class Project:
     def option(self, key):
         return self._options[key]
 
-    # def read_command(self):
-    #     last_command_record = self.path('last-command')
-    #     try:
-    #         command_record = experimentstate.read_json(last_command_record)
-    #     except IOError:
-    #         logger.error('Could not find a record of the last command in %s', last_command_record)
-    #         return {'status': 1, 'command': []}
-    #     else:
-    #         if command_record['status'] != 0:
-    #             logger.warning('Running a recorded command with non-zero exit status: %s', command_record['status'])
+    def read_command(self):
+        logger.info('Reading status of last command')
+        logger.debug('... from file %s', self.path('last-command'))
+        record_file = self.path('last-command')
+        try:
+            command_record = experimentstate.read_json(record_file)
+        except IOError:
+            logger.error('Could not find a record of the last command in %s', record_file)
+            return {'status': 1, 'command': []}
+        return command_record
+
+    def record_command(self, command_record):
+        logger.info('Recording status of last command')
+        logger.debug('... to file %s', self.path('last-command'))
+        experimentstate.write_json(command_record, self.path('last-command'))
 
     def _hash_input_data(self):
         logger.info('Hashing input data.')
@@ -129,9 +134,7 @@ class Project:
             raise Exception('The git repository contains unstaged or uncommitted changes')
         state.inputData = self._hash_input_data()
         state.pathsToOutputData = []  # not yet implemented
-        logger.info('Reading status of last command')
-        logger.debug('... from file %s', self.path('last-command'))
-        state.command = experimentstate.read_json(self.path('last-command'))
+        state.command = self.read_command()
         state.environment = None  # not yet implemented
         return state
 
@@ -150,9 +153,7 @@ class Project:
                             create_directories=False)
         self._verify_hashes(state.inputData)
         # output data not implemented
-        logger.info('Restoring status of last command')
-        logger.debug('... to file %s', self.path('last-command'))
-        experimentstate.write_json(state.command, self.path('last-command'))
+        self.record_command(state.command)
         # environment not implemented
         if self.option('do-build'):
             self._build_project()

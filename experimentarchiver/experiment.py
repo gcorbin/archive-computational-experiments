@@ -54,6 +54,9 @@ class Experiment:
 
     def archive_project(self, project):
         state = project.read_from_project()
+        if state.command['status'] != 0:
+            logger.error('Archiving failed runs is not allowed')
+            raise Exception('Archiving failed runs is not allowed')
         try:
             self.write_to_archive(state, project)
         except:
