@@ -1,5 +1,6 @@
 *
 !*.py
 !.gitignore
+!find_tags.sh
 !*/
 !/doc/**
