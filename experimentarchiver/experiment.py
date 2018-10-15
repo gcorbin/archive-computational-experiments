@@ -34,9 +34,9 @@ class Experiment:
         state.pathsToOutputData = []  # not yet implemented
         state.command = experimentstate.read_json(self.path('last-command'))
         state.environment = None  # not yet implemented
-        with open(self.path('description'),'r') as f:
+        with open(self.path('description'), 'r') as f:
             state.description = f.readline().strip('\n')
-        logger.info('Experiment description: %s ...',state.description)
+        logger.info('Experiment description: %s ...', state.description)
         return state
 
     def write_to_archive(self, project, state):
@@ -55,7 +55,7 @@ class Experiment:
         # output data not yet implemented
         experimentstate.write_json(state.command, self.path('last-command'))
         # environment not yet implemented
-        with open(self.path('description'),'w') as f:
+        with open(self.path('description'), 'w') as f:
             f.write(state.description)
 
     def archive_project(self, project, description=None):
