@@ -1,8 +1,48 @@
 import configparser
 import logging
+import imp
+import os
+import hashlib
+import subprocess
 
+import experimentarchiver.state as experimentstate
+import git_utils
+import os_utils
 
 logger = logging.getLogger(__name__)
+
+
+def read_parameter_list(filename):
+    logger.info('Reading list of parameter files')
+    logger.debug('... from file %s', filename)
+    with open(filename, 'r') as f:
+        line_list = [line.strip() for line in f]
+    return line_list
+
+
+def get_paths_to_input_data(path_to_script):
+    imported_module = imp.load_source('tmp_script_module', path_to_script)
+    execute_path = os.path.dirname(path_to_script)
+    with os_utils.ChangedDirectory(execute_path):
+        logger.info('Retrieving list of input files.')
+        logger.debug('... using script file %s', path_to_script)
+        path_list = imported_module.getFilesToHash()
+    return path_list
+
+
+def compute_file_hash(filename, hash_algorithm):
+    logger.debug('Computing hash for file %s', filename)
+    file_hash = hashlib.new(hash_algorithm)
+
+    buffer_size = 64 * pow(2, 10)  # 64 kilobytes
+    with open(filename, 'rb') as file_to_hash:
+        while True:
+            chunk = file_to_hash.read(buffer_size)
+            if not chunk:
+                break
+            file_hash.update(chunk)
+
+    return "{0}".format(file_hash.hexdigest())
 
 
 class ProjectOptions:
@@ -38,3 +78,81 @@ class ProjectOptions:
 
     def option(self, key):
         return self._options[key]
+
+    # def read_command(self):
+    #     last_command_record = self.path('last-command')
+    #     try:
+    #         command_record = experimentstate.read_json(last_command_record)
+    #     except IOError:
+    #         logger.error('Could not find a record of the last command in %s', last_command_record)
+    #         return {'status': 1, 'command': []}
+    #     else:
+    #         if command_record['status'] != 0:
+    #             logger.warning('Running a recorded command with non-zero exit status: %s', command_record['status'])
+
+    def _hash_input_data(self):
+        logger.info('Hashing input data.')
+        relative_paths_to_input_data = get_paths_to_input_data(self.path('get-input-files'))
+        hash_algorithm = self.option('hash-algorithm')
+        data = []
+        for relpath in relative_paths_to_input_data:
+            abspath = os.path.join(self.path('input-data-path'), relpath)
+            file_hash = compute_file_hash(abspath, hash_algorithm)
+            hash_tuple = (relpath, hash_algorithm, file_hash)
+            data.append(hash_tuple)
+        return data
+
+    def _verify_hashes(self, hash_list):
+        logger.info('Verifying hashes.')
+        for (relpath, hash_algorithm, stored_hash) in hash_list:
+            abspath = os.path.join(self.path('input-data-path'), relpath)
+            computed_hash = compute_file_hash(abspath, hash_algorithm)
+            if stored_hash != computed_hash:
+                raise Exception("The stored and computed {0} hashes for the file {1} differ: {2} != {3}"
+                                .format(hash_algorithm, abspath, stored_hash, computed_hash))
+
+    def _build_project(self):
+        logger.info('Building project.')
+        build_command = self.option('build-command').strip().split()
+        with os_utils.ChangedDirectory(self.path('build-path')):
+            logger.debug('Executing build command %s', str(build_command))
+            subprocess.check_call(build_command)
+
+    def read_from_project(self):
+        state = experimentstate.ExperimentState()
+        state.commitHash = git_utils.get_git_commit_hash(self.path('git-path'))
+        state.pathsToParameters = read_parameter_list(self.path('parameter-list'))
+        repo_is_clean = git_utils.is_git_repo_clean(self.path('git-path'),
+                                                    self.path('top-path'),
+                                                    state.pathsToParameters)
+        if not repo_is_clean:
+            raise Exception('The git repository contains unstaged or uncommitted changes')
+        state.inputData = self._hash_input_data()
+        state.pathsToOutputData = []  # not yet implemented
+        logger.info('Reading status of last command')
+        logger.debug('... from file %s', self.path('last-command'))
+        state.command = experimentstate.read_json(self.path('last-command'))
+        state.environment = None  # not yet implemented
+        return state
+
+    def restore_to_project(self, archive_options):
+        state = archive_options.read_from_archive()
+        paths_to_parameters = read_parameter_list(self.path('parameter-list'))
+        repo_is_clean = git_utils.is_git_repo_clean(self.path('git-path'),
+                                                    self.path('top-path'),
+                                                    paths_to_parameters)
+        if not repo_is_clean:
+            raise Exception('The git repository contains unstaged or uncommitted changes')
+        git_utils.checkout_git_commit(self.path('git-path'), state.commitHash)
+        os_utils.copy_files(archive_options.path('parameter-path'),
+                            self.path('top-path'),
+                            state.pathsToParameters,
+                            create_directories=False)
+        self._verify_hashes(state.inputData)
+        # output data not implemented
+        logger.info('Restoring status of last command')
+        logger.debug('... to file %s', self.path('last-command'))
+        experimentstate.write_json(state.command, self.path('last-command'))
+        # environment not implemented
+        if self.option('do-build'):
+            self._build_project()

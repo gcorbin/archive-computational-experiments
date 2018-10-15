@@ -1,6 +1,5 @@
 import os
 import copy
-import shutil
 import subprocess
 from datetime import date
 import logging
@@ -82,32 +81,17 @@ class ExperimentArchiver:
         experiment_name = self.find_free_experiment_name(raw_name)
         logger.info('Experiment name is %s', experiment_name)
         archive_opts = ArchiveOptions(self._archiveName, experiment_name)
-        state = ExperimentState(self._projectOptions, archive_opts)
-        state.read_from_project()
-        try:
-            state.write_to_archive()
-        except:
-            logger.warning('Cleaning up failed archiving attempt.')
-            logger.debug('Removing directory %s', archive_opts.path('experiment-path'))
-            shutil.rmtree(archive_opts.path('experiment-path'), ignore_errors=True)
-            raise
-        return state
+        archive_opts.archive_project(self._projectOptions)
 
     def restore(self, experiment_name):
         logger.info('Restoring experiment %s to project %s', experiment_name, self._archiveName)
         archive_opts = ArchiveOptions(self._archiveName, experiment_name)
-        state = ExperimentState(self._projectOptions, archive_opts)
-        state.read_from_archive()
-        state.restore_to_project()
-        return state
+        self._projectOptions.restore_to_project(archive_opts)
     
     def run_and_archive(self, raw_name, command):
         self.run(command)
-        state = self.archive(raw_name)
-        return state
+        self.archive(raw_name)
     
     def restore_and_run(self, experiment_name):
-        state = self.restore(experiment_name)
+        self.restore(experiment_name)
         self.run_last_command()
-        state.update_command_status()
-        return state
