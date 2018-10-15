@@ -25,7 +25,7 @@ if __name__ == '__main__':
     archive_parser = subparsers.add_parser('archive', parents=[parent_parser], conflict_handler='resolve',
                                            help='Save the current project state in the archive.')
     archive_parser.add_argument('name')
-    archive_parser.add_argument('-m', '--message')
+    archive_parser.add_argument('-d', '--description')
 
     restore_parser = subparsers.add_parser('restore', parents=[parent_parser], conflict_handler='resolve',
                                            help='Restore an experiment to the project.')
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     elif args.mode == 'rerun':
         archiver.run_last_command()
     elif args.mode == 'archive':
-        archiver.archive(args.name)
+        archiver.archive(args.name, args.description)
     elif args.mode == 'restore':
         archiveName, experimentName = split_archive_and_experiment_name(args.experiment)
         if not archiveName == os.path.normpath(args.archive):

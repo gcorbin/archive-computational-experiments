@@ -72,12 +72,12 @@ class ExperimentArchiver:
         logger.info('Trying recorded run, using specified command.')
         return self._run_and_record(command)
 
-    def archive(self, raw_name):
+    def archive(self, raw_name, description=''):
         logger.info('Archiving experiment for project %s', self._archiveName)
         experiment_name = self.find_free_experiment_name(raw_name)
         logger.info('Experiment name is %s', experiment_name)
         experiment = Experiment(self._archiveName, experiment_name)
-        experiment.archive_project(self._project)
+        experiment.archive_project(self._project, description)
 
     def restore(self, experiment_name):
         logger.info('Restoring experiment %s to project %s', experiment_name, self._archiveName)

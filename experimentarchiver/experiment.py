@@ -18,7 +18,8 @@ class Experiment:
                        'parameter-list': os.path.join(experiment_path, 'parameters/parameter-list'),
                        'commit-hash': os.path.join(experiment_path, 'commit-hash'),
                        'last-command': os.path.join(experiment_path, 'last-command'),
-                       'input-files': os.path.join(experiment_path, 'input-files')}
+                       'input-files': os.path.join(experiment_path, 'input-files'),
+                       'description': os.path.join(experiment_path, 'description')}
 
     def path(self, key):
         return self._paths[key]
@@ -33,9 +34,12 @@ class Experiment:
         state.pathsToOutputData = []  # not yet implemented
         state.command = experimentstate.read_json(self.path('last-command'))
         state.environment = None  # not yet implemented
+        with open(self.path('description'),'r') as f:
+            state.description = f.readline().strip('\n')
+        logger.info('Experiment description: %s ...',state.description)
         return state
 
-    def write_to_archive(self, state, project):
+    def write_to_archive(self, project, state):
         logger.info('Writing to archive')
         os_utils.make_directory_if_nonexistent(self.path('archive-path'))
         os_utils.make_directory_if_nonexistent(self.path('experiment-path'))
@@ -51,14 +55,18 @@ class Experiment:
         # output data not yet implemented
         experimentstate.write_json(state.command, self.path('last-command'))
         # environment not yet implemented
+        with open(self.path('description'),'w') as f:
+            f.write(state.description)
 
-    def archive_project(self, project):
+    def archive_project(self, project, description=None):
         state = project.read_from_project()
+        if description is not None:
+            state.description = description
         if state.command['status'] != 0:
             logger.error('Archiving failed runs is not allowed')
             raise Exception('Archiving failed runs is not allowed')
         try:
-            self.write_to_archive(state, project)
+            self.write_to_archive(project, state)
         except Exception:
             logger.warning('Cleaning up failed archiving attempt.')
             logger.debug('Removing directory %s', self.path('experiment-path'))

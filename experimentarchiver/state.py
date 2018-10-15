@@ -24,3 +24,4 @@ class ExperimentState:
         self.pathsToOutputData = []
         self.command = []
         self.environment = None
+        self.description = ''
