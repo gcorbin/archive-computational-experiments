@@ -42,4 +42,4 @@ class Version:
         return self._version_tuple
 
 
-version = Version(0, 1)
+version = Version(1, 1)
