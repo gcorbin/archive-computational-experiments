@@ -3,31 +3,13 @@ import logging
 import shutil
 import json
 
+from experimentarchiver import Version
 from experimentarchiver import version as current_version
 import experimentarchiver.state as experimentstate
 import os_utils
 
+
 logger = logging.getLogger(__name__)
-
-
-def version_string(v):
-    return "{0}.{1}".format(v['major'], v['minor'])
-
-
-def version_less_or_equal(v1, v2):
-    if v1['major'] < v2['major']:
-        return True
-    if v1['major'] == v2['major'] and v1['minor'] <= v2['minor']:
-        return True
-    return False
-
-
-def version_less(v1, v2):
-    return version_less_or_equal(v1, v2) and not version_less_or_equal(v2, v1)
-
-
-def version_equal(v1, v2):
-    return version_less_or_equal(v1, v2) and version_less_or_equal(v2, v1)
 
 
 class Experiment:
@@ -51,21 +33,21 @@ class Experiment:
         logger.debug('Reading version number from file %s', self.path('version'))
         if os.path.isfile(self.path('version')):
             try:
-                stored_version = experimentstate.read_json(self.path('version'))
-            except json.JSONDecodeError:
+                stored_version = Version(*experimentstate.read_json(self.path('version')))
+            except (ValueError, TypeError):
                 logger.warning('The version file is corrupted. Cannot parse the version number.')
                 return
-            if version_equal(stored_version, current_version):
+            if current_version == stored_version:
                 logger.info('The current program version %s matches the version used to record the experiment',
-                            version_string(current_version))
+                            str(current_version))
             else:
-                if version_less(stored_version, current_version):
+                if current_version > stored_version:
                     comp = 'NEWER'
                 else:
                     comp = 'OLDER'
                 logger.warning('The current program version %s is %s'
                                ' than the version %s used to record the experiment',
-                               version_string(current_version), comp, version_string(stored_version))
+                               str(current_version), comp, str(stored_version))
         else:
             logger.warning('There is no version file for this experiment. '
                            'This experiment seems to be very old.')
@@ -91,7 +73,10 @@ class Experiment:
         os_utils.make_directory_if_nonexistent(self.path('archive-path'))
         os_utils.make_directory_if_nonexistent(self.path('experiment-path'))
         logger.debug('Experiment directory is %s', self.path('experiment-path'))
-        experimentstate.write_json(current_version, self.path('version'))
+        if not current_version.is_release():
+            logger.warning('This version of the archiving program is not a release and potentially unstable. '
+                           'Consider using a stable version instead.')
+        experimentstate.write_json(current_version.get_version_tuple(), self.path('version'))
         experimentstate.write_json(state.commitHash, self.path('commit-hash'))
         os_utils.make_directory_if_nonexistent(self.path('parameter-path'))
         experimentstate.write_json(state.pathsToParameters, self.path('parameter-list'))
