@@ -16,10 +16,9 @@ def split_archive_and_experiment_name(path):
     if os.path.isabs(path):
         raise Exception('Only relative paths allowed')
     parts = os_utils.split_all_parts(path)
-    parts = [p for p in parts if p != '']
-    if len(parts) != 2:
-        raise Exception('Only paths with exactly 2 parts are allowed')
-    return parts
+    archive_name = parts[0]
+    experiment_name = os.path.join(*parts[1:])
+    return archive_name, experiment_name
 
 
 class ExperimentArchiver:
@@ -29,16 +28,21 @@ class ExperimentArchiver:
         options_file = os.path.join(archive_name, 'project.ini')
         self._project = Project(options_file)
 
-    def find_free_experiment_name(self, raw_name):
-        today = date.today().strftime('%Y%m%d')   
+    def find_free_experiment_path(self, raw_path):
+        parts = os_utils.split_all_parts(raw_path)
+        raw_name = parts.pop()
+        path_to_experiment = os.path.join(*parts)
+
+        today = date.today().strftime('%Y%m%d')
         number = -1
+        full_experiment_path = ''
         experiment_path = ''
-        experiment_name = ''
-        while experiment_path == '' or os.path.isdir(experiment_path):
+        while full_experiment_path == '' or os.path.isdir(full_experiment_path):
             number += 1
             experiment_name = "{0}_{1}_{2:02d}".format(today, raw_name, number)
-            experiment_path = os.path.join(self._archiveName, experiment_name)
-        return experiment_name
+            experiment_path = os.path.join(path_to_experiment, experiment_name)
+            full_experiment_path = os.path.join(self._archiveName, experiment_path)
+        return experiment_path
 
     def _run_and_record(self, command):
         command_record = {'status': 1, 'command': command}
@@ -72,11 +76,11 @@ class ExperimentArchiver:
         logger.info('Trying recorded run, using specified command.')
         return self._run_and_record(command)
 
-    def archive(self, raw_name, description=''):
+    def archive(self, raw_path, description=''):
         logger.info('Archiving experiment for project %s', self._archiveName)
-        experiment_name = self.find_free_experiment_name(raw_name)
-        logger.info('Experiment name is %s', experiment_name)
-        experiment = Experiment(self._archiveName, experiment_name)
+        experiment_path = self.find_free_experiment_path(raw_path)
+        logger.info('Experiment name is %s', experiment_path)
+        experiment = Experiment(self._archiveName, experiment_path)
         experiment.archive_project(self._project, description)
 
     def restore(self, experiment_name):

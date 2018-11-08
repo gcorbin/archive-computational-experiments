@@ -70,8 +70,7 @@ class Experiment:
 
     def write_to_archive(self, project, state):
         logger.info('Writing to archive')
-        os_utils.make_directory_if_nonexistent(self.path('archive-path'))
-        os_utils.make_directory_if_nonexistent(self.path('experiment-path'))
+        os_utils.make_all_directories(self.path('experiment-path'))
         logger.debug('Experiment directory is %s', self.path('experiment-path'))
         if not current_version.is_release():
             logger.warning('This version of the archiving program is not a release and potentially unstable. '
