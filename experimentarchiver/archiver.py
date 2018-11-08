@@ -83,9 +83,9 @@ class ExperimentArchiver:
         experiment = Experiment(self._archiveName, experiment_path)
         experiment.archive_project(self._project, description)
 
-    def restore(self, experiment_name):
-        logger.info('Restoring experiment %s to project %s', experiment_name, self._archiveName)
-        experiment = Experiment(self._archiveName, experiment_name)
+    def restore(self, experiment_path):
+        logger.info('Restoring experiment %s to project %s', experiment_path, self._archiveName)
+        experiment = Experiment(self._archiveName, experiment_path)
         self._project.restore_to_project(experiment)
     
     def run_and_archive(self, raw_name, command):

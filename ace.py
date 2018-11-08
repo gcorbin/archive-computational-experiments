@@ -11,6 +11,14 @@ def make_command_list(command_str):
     return command_str.split(' ')
 
 
+def get_experiment_name(archive_name, experiment_path):
+    archive_name_from_experiment, experiment_name = split_archive_and_experiment_name(experiment_path)
+    if not archive_name_from_experiment == os.path.normpath(archive_name):
+        raise Exception('Archive names do not match: {0} != {1}'
+                        .format(archive_name_from_experiment, os.path.normpath(archive_name)))
+    return experiment_name
+
+
 if __name__ == '__main__':
     parent_parser = argparse.ArgumentParser()
     parent_parser.add_argument('archive', help='Which archive to work on.')
@@ -59,21 +67,17 @@ if __name__ == '__main__':
     elif args.mode == 'rerun':
         archiver.run_last_command()
     elif args.mode == 'archive':
-        archiver.archive(args.name, args.description)
+        experiment_name = get_experiment_name(args.archive, args.name)
+        archiver.archive(experiment_name, args.description)
     elif args.mode == 'restore':
-        archiveName, experimentName = split_archive_and_experiment_name(args.experiment)
-        if not archiveName == os.path.normpath(args.archive):
-            raise Exception('Archive names do not match: {0} != {1}'
-                            .format(archiveName, os.path.normpath(args.archive)))
-        archiver.restore(experimentName)
+        experiment_name = get_experiment_name(args.archive, args.experiment)
+        archiver.restore(experiment_name)
     elif args.mode == 'restore-and-run':
-        archiveName, experimentName = split_archive_and_experiment_name(args.experiment)
-        if not archiveName == os.path.normpath(args.archive):
-            raise Exception('Archive names do not match: {0} != {1}'
-                            .format(archiveName, os.path.normpath(args.archive)))
-        archiver.restore_and_run(experimentName)
+        experiment_name = get_experiment_name(args.archive, args.experiment)
+        archiver.restore_and_run(experiment_name)
     elif args.mode == 'run-and-archive':
-        archiver.run_and_archive(args.name, make_command_list(args.command))
+        experiment_name = get_experiment_name(args.archive, args.name)
+        archiver.run_and_archive(experiment_name, make_command_list(args.command))
     else:
         raise Exception('Unrecognised mode : {0}'.format(args.mode))
 
