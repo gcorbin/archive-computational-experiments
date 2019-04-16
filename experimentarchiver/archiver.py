@@ -31,7 +31,7 @@ class ExperimentArchiver:
     def find_free_experiment_path(self, raw_path):
         parts = os_utils.split_all_parts(raw_path)
         raw_name = parts.pop()
-        path_to_experiment = os.path.join(*parts)
+        path_to_experiment = os.path.join(".", *parts)
 
         today = date.today().strftime('%Y%m%d')
         number = -1
