@@ -73,6 +73,7 @@ class ExperimentArchiver:
             return command_record
 
     def run(self, command):
+        self._project.build_project()
         logger.info('Trying recorded run, using specified command.')
         return self._run_and_record(command)
 

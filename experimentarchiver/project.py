@@ -116,12 +116,13 @@ class Project:
                 raise Exception("The stored and computed {0} hashes for the file {1} differ: {2} != {3}"
                                 .format(hash_algorithm, abspath, stored_hash, computed_hash))
 
-    def _build_project(self):
-        logger.info('Building project.')
-        build_command = self.option('build-command').strip().split()
-        with os_utils.ChangedDirectory(self.path('build-path')):
-            logger.debug('Executing build command %s', str(build_command))
-            subprocess.check_call(build_command)
+    def build_project(self):
+        if self.option('do-build'):
+            logger.info('Building project.')
+            build_command = self.option('build-command').strip().split()
+            with os_utils.ChangedDirectory(self.path('build-path')):
+                logger.debug('Executing build command %s', str(build_command))
+                subprocess.check_call(build_command)
 
     def read_from_project(self):
         state = experimentstate.ExperimentState()
@@ -155,5 +156,4 @@ class Project:
         # output data not implemented
         self.record_command(state.command)
         # environment not implemented
-        if self.option('do-build'):
-            self._build_project()
+        self.build_project()
