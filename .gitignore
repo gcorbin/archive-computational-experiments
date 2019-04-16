@@ -1,6 +1,6 @@
 *
-!*.py
+!./*.py
 !.gitignore
+!README.md
 !find_tags.sh
-!*/
-!/doc/**
+!experimentarchiver/
