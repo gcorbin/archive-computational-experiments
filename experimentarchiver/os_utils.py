@@ -40,6 +40,11 @@ def split_all_subpaths(path):
     return subs
 
 
+def is_composite(path):
+    parts = split_all_parts(path)
+    return os.path.isabs(path) or len(parts) > 1
+
+
 def make_all_directories(path):
     if os.path.isabs(path):
         raise Exception('Only relative paths allowed')

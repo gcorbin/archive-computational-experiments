@@ -77,6 +77,32 @@ class ExperimentArchiver:
         logger.info('Trying recorded run, using specified command.')
         return self._run_and_record(command)
 
+    def create_new_set(self, set_name, description=''):
+        logger.info('Creating new experiment set %s for project %s', set_name, self._archiveName)
+        if os_utils.is_composite(set_name):
+            logger.error('Set name must not be composite (contain a /)')
+            raise Exception('Set name must not be composite')
+        set_path = os.path.join(self._archiveName, set_name)
+        if os.path.isdir(set_path):
+            logger.warning('Experiment set %s already exists', set_name)
+            return
+        os_utils.make_directory_if_nonexistent(set_path)
+
+        doc_path = os.path.join(set_path, 'doc')
+        os_utils.make_directory_if_nonexistent(doc_path)
+        os_utils.make_directory_if_nonexistent(os.path.join(set_path, 'data'))
+
+        protocol_template = os.path.join(self._archiveName, 'protocol_template.tex')
+        if os.path.isfile(protocol_template):
+            os_utils.copy_files(self._archiveName, doc_path, ['protocol_template.tex'])
+        else:
+            logger.warning('The file %s does not exist. '
+                           'Consider writing a template for experiment protocols. ', protocol_template)
+        with open(os.path.join(doc_path, 'protocol_macros.tex'), 'w') as f:
+            f.write('\\newcommand{\\protocoltitle}{%s}\n' % (set_name, ))
+            f.write('\\newcommand{\\protocoldate}{%s}\n' % (date.today().strftime('%d.%m.%Y'), ))
+            f.write('\\newcommand{\\protocoldescription}{%s}\n' % (description, ))
+
     def archive(self, raw_path, description=''):
         logger.info('Archiving experiment for project %s', self._archiveName)
         experiment_path = self.find_free_experiment_path(raw_path)

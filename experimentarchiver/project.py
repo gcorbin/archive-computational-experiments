@@ -49,6 +49,10 @@ class Project:
 
     def __init__(self, options_file_name):
         logger.debug('Reading options from file %s', options_file_name)
+        if not os.path.isfile(options_file_name):
+            logger.critical('The file %s does not exist', options_file_name)
+            raise OSError('The file {0} does not exist'.format(options_file_name))
+
         config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
         config.read(options_file_name)
         

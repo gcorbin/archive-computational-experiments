@@ -3,8 +3,11 @@
 import os
 import sys
 import argparse
+import logging
 from experimentarchiver.archiver import ExperimentArchiver, split_archive_and_experiment_name
 from experimentarchiver.defaultlogger import set_default_logging_behavior
+
+logger = logging.getLogger('experimentarchiver.main')
 
 
 def make_command_list(command_str):
@@ -35,6 +38,12 @@ if __name__ == '__main__':
     rerun_parser = subparsers.add_parser('rerun', parents=[parent_parser], conflict_handler='resolve',
                                          help='Run the last recorded command.')
 
+    new_set_parser = subparsers.add_parser('new-set', parents=[parent_parser], conflict_handler='resolve',
+                                           help='Create a new sub-folder and templates'
+                                                ' for a set of related experiments')
+    new_set_parser.add_argument('name', help='The name of the sub-folder')
+    new_set_parser.add_argument('-d', '--description', help='Summarize the goal of this set of experiments')
+
     archive_parser = subparsers.add_parser('archive', parents=[parent_parser], conflict_handler='resolve',
                                            help='Save the current project state in the archive.')
     archive_parser.add_argument('name', help='A descriptive name for the experiment. '
@@ -59,13 +68,20 @@ if __name__ == '__main__':
 
     args = main_parser.parse_args()
 
-    set_default_logging_behavior(logfile=args.mode)
+    set_default_logging_behavior(logfile='ace')
+
+    if not os.path.isdir(args.archive):
+        logger.critical('The archive with name %s does not exist', args.archive)
+        raise Exception('The archive with name {0} does not exist'.format(args.archive))
+
     archiver = ExperimentArchiver(args.archive)
 
     if args.mode == 'run':
         archiver.run(make_command_list(args.command))
     elif args.mode == 'rerun':
         archiver.run_last_command()
+    elif args.mode == 'new-set':
+        archiver.create_new_set(args.name, args.description)
     elif args.mode == 'archive':
         experiment_name = get_experiment_name(args.archive, args.name)
         archiver.archive(experiment_name, args.description)
