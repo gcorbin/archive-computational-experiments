@@ -63,6 +63,7 @@ class Project:
             self._options['build-command'] = config.get('options', 'build-command')
         else:
             self._options['build-command'] = ''
+        self._options['do-record-outputs'] = config.getboolean('options', 'do-record-outputs', fallback=False)
         self._options['hash-algorithm'] = config.get('options', 'hash-algorithm', fallback='sha256')
         extra_args = config.get('options', 'append-arguments', fallback='')
         extra_args = extra_args.strip()
@@ -73,9 +74,14 @@ class Project:
         
         self._paths = {}
         for key in ['git-path', 'top-path', 'build-path', 'input-data-path',
-                    'output-data-path', 'parameter-list', 'last-command', 
-                    'get-input-files']:
+                    'parameter-list', 'last-command',
+                    'output-data-path', 'get-input-files']:
             self._paths[key] = config.get('paths', key)
+        if self.option('do-record-outputs'):
+            self._paths['output-changes'] = config.get('paths', 'output-changes')
+
+        self._output_snapshot = None
+        self._output_changes = []
 
     def path(self, key):
         return self._paths[key]
@@ -98,6 +104,31 @@ class Project:
         logger.info('Recording status of last command')
         logger.debug('... to file %s', self.path('last-command'))
         experimentstate.write_json(command_record, self.path('last-command'))
+
+    def take_output_snapshot(self):
+        if self.option('do-record-outputs'):
+            snapshot = os_utils.create_snapshot(self.path('output-data-path'))
+            if self._output_snapshot is not None:
+                self._output_changes = os_utils.compute_changed_files(self._output_snapshot, snapshot)
+            self._output_snapshot = snapshot
+
+    def record_output_changes(self):
+        if self.option('do-record-outputs'):
+            logger.info('Recording changes in output folder')
+            logger.debug('Output folder is %s', self.path('output-data-path'))
+            experimentstate.write_json(self._output_changes, self.path('output-changes'))
+
+    def read_output_changes(self):
+        if self.option('do-record-outputs'):
+            logger.info('Reading changed outputs')
+            logger.debug('... from file %s', self.path('output-changes'))
+            changes_file = self.path('output-changes')
+            try:
+                output_changes = experimentstate.read_json(changes_file)
+            except IOError:
+                logger.error('Could not find a record of the output changes in %s', changes_file)
+                return []
+            return output_changes
 
     def _hash_input_data(self):
         logger.info('Hashing input data.')
@@ -138,7 +169,7 @@ class Project:
         if not repo_is_clean:
             raise Exception('The git repository contains unstaged or uncommitted changes')
         state.inputData = self._hash_input_data()
-        state.pathsToOutputData = []  # not yet implemented
+        state.pathsToOutputData = self.read_output_changes()
         state.command = self.read_command()
         state.environment = None  # not yet implemented
         return state
@@ -157,7 +188,7 @@ class Project:
                             state.pathsToParameters,
                             create_directories=False)
         self._verify_hashes(state.inputData)
-        # output data not implemented
+        # output data will not be restored
         self.record_command(state.command)
         # environment not implemented
         self.build_project()

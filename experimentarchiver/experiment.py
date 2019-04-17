@@ -19,6 +19,7 @@ class Experiment:
         self._paths = {'archive-path': archive_path,
                        'experiment-path': experiment_path,
                        'parameter-path': os.path.join(experiment_path, 'parameters/'),
+                       'output-path': os.path.join(experiment_path, 'outputs/'),
                        'parameter-list': os.path.join(experiment_path, 'parameters/parameter-list'),
                        'commit-hash': os.path.join(experiment_path, 'commit-hash'),
                        'last-command': os.path.join(experiment_path, 'last-command'),
@@ -84,7 +85,8 @@ class Experiment:
                             state.pathsToParameters,
                             create_directories=True)
         experimentstate.write_json(state.inputData, self.path('input-files'))
-        # output data not yet implemented
+        os_utils.make_directory_if_nonexistent(self.path('output-path'))
+        os_utils.copy_changed_files(project.path('output-data-path'), self.path('output-path'), state.pathsToOutputData)
         experimentstate.write_json(state.command, self.path('last-command'))
         # environment not yet implemented
         with open(self.path('description'), 'w') as f:

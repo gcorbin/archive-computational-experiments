@@ -62,6 +62,7 @@ class ExperimentArchiver:
 
     def _run_and_record(self, command):
         command_record = {'status': 1, 'command': command}
+        self._project.take_output_snapshot()
         try:
             with os_utils.ChangedDirectory(self._project.path('build-path')):
                 extra_args = self._project.option('append-arguments')
@@ -75,6 +76,9 @@ class ExperimentArchiver:
             logger.warning('Command exited with non-zero status: %s', command_record['status'])
         else:
             logger.info('Successfully executed the command.')
+        self._project.take_output_snapshot()
+        self._project.record_output_changes()
+
         return command_record
 
     def run_last_command(self):

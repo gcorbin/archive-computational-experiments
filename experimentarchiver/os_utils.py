@@ -64,6 +64,41 @@ def copy_files(from_path, to_path, files, create_directories=False):
         shutil.copy2(from_file, to_file)
 
 
+def create_snapshot(path):
+    snapshot = {}
+    for root, dirs, files in os.walk(path):
+        for filename in files:
+            name = os.path.join(root, filename)
+            st = os.stat(name)
+            snapshot[(root, filename)] = st
+    return snapshot
+
+
+def compute_changed_files(snap1, snap2):
+    changed_files = []
+    for key,value in snap2.iteritems():
+        if snap1.has_key(key):
+            diff = snap1[key] != snap2[key]
+        else:
+            diff = True
+        if diff:
+            changed_files.append(key)
+    return changed_files
+
+
+def copy_changed_files(from_path, to_path, changed_files):
+    changed_dirs = set()
+    for path, name in changed_files:
+        changed_dirs.add(path)
+    for cdir in changed_dirs:
+        make_all_directories(os.path.join(to_path, cdir))
+    logger.debug('Copying files from %s to %s', from_path, to_path)
+    for cdir, name in changed_files:
+        from_file = os.path.join(from_path, cdir, name)
+        to_file = os.path.join(to_path, cdir, name)
+        shutil.copy2(from_file, to_file)
+
+
 class ChangedDirectory:
 
     def __init__(self, path):
