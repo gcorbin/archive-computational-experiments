@@ -132,14 +132,3 @@ class ExperimentArchiver:
         logger.info('Restoring experiment %s to project %s', experiment_path, self._archiveName)
         experiment = Experiment(self._archiveName, experiment_path)
         self._project.restore_to_project(experiment)
-
-
-"""
-    def run_and_archive(self, set_name, raw_name, command):
-        self.run(command)
-        self.archive(set_name, raw_name)
-    
-    def restore_and_run(self, experiment_name):
-        self.restore(experiment_name)
-        self.run_last_command()
-        """
