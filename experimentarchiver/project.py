@@ -26,7 +26,7 @@ def get_paths_to_input_data(path_to_script):
     with os_utils.ChangedDirectory(execute_path):
         logger.info('Retrieving list of input files.')
         logger.debug('... using script file %s', path_to_script)
-        path_list = imported_module.getFilesToHash()
+        path_list = imported_module.get_input_data_files()
     return path_list
 
 
