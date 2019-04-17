@@ -15,10 +15,13 @@ logger = logging.getLogger(__name__)
 def split_archive_and_experiment_name(path):
     if os.path.isabs(path):
         raise Exception('Only relative paths allowed')
-    parts = os_utils.split_all_parts(path)
-    archive_name = parts[0]
-    experiment_name = os.path.join(*parts[1:])
-    return archive_name, experiment_name
+    if os_utils.is_composite(path):
+        parts = os_utils.split_all_parts(path)
+        archive_name = parts[0]
+        experiment_name = os.path.join(*parts[1:])
+        return archive_name, experiment_name
+    else:
+        return '', path
 
 
 class ExperimentArchiver:
@@ -28,10 +31,22 @@ class ExperimentArchiver:
         options_file = os.path.join(archive_name, 'project.ini')
         self._project = Project(options_file)
 
-    def find_free_experiment_path(self, raw_path):
-        parts = os_utils.split_all_parts(raw_path)
-        raw_name = parts.pop()
-        path_to_experiment = os.path.join(".", *parts)
+    def _get_path_to_experiment(self, set_name, experiment_path):
+        if set_name != '':
+            experiment_path = os.path.join('data', experiment_path)
+        return os.path.join(set_name, experiment_path)
+
+    def _get_path_to_set(self, set_name):
+        return os.path.join(self._archiveName, set_name)
+
+    def _check_if_set_exists(self, set_name):
+        set_path = self._get_path_to_set(set_name)
+        if set_name == '':
+            return True
+        return os.path.isfile(os.path.join(set_path, 'set_description'))
+
+    def _find_free_experiment_path(self, set_name, raw_path):
+        head, raw_name = os.path.split(raw_path)
 
         today = date.today().strftime('%Y%m%d')
         number = -1
@@ -40,7 +55,8 @@ class ExperimentArchiver:
         while full_experiment_path == '' or os.path.isdir(full_experiment_path):
             number += 1
             experiment_name = "{0}_{1}_{2:02d}".format(today, raw_name, number)
-            experiment_path = os.path.join(path_to_experiment, experiment_name)
+            experiment_path = os.path.join(head, experiment_name)
+            experiment_path = self._get_path_to_experiment(set_name, experiment_path)
             full_experiment_path = os.path.join(self._archiveName, experiment_path)
         return experiment_path
 
@@ -79,12 +95,9 @@ class ExperimentArchiver:
 
     def create_new_set(self, set_name, description=''):
         logger.info('Creating new experiment set %s for project %s', set_name, self._archiveName)
-        if os_utils.is_composite(set_name):
-            logger.error('Set name must not be composite (contain a /)')
-            raise Exception('Set name must not be composite')
-        set_path = os.path.join(self._archiveName, set_name)
+        set_path = self._get_path_to_set(set_name)
         if os.path.isdir(set_path):
-            logger.warning('Experiment set %s already exists', set_name)
+            logger.warning('Cannot use an existing folder %s to create a new set', set_path)
             return
         os_utils.make_directory_if_nonexistent(set_path)
 
@@ -103,9 +116,14 @@ class ExperimentArchiver:
             f.write('\\newcommand{\\protocoldate}{%s}\n' % (date.today().strftime('%d.%m.%Y'), ))
             f.write('\\newcommand{\\protocoldescription}{%s}\n' % (description, ))
 
-    def archive(self, raw_path, description=''):
+        with open(os.path.join(set_path, 'set_description'), 'w') as f:
+            f.write(description)
+
+    def archive(self, set_name, raw_name, description=''):
         logger.info('Archiving experiment for project %s', self._archiveName)
-        experiment_path = self.find_free_experiment_path(raw_path)
+        if not self._check_if_set_exists(set_name) :
+            raise Exception('There is no valid set with the name {0}'.format(set_name))
+        experiment_path = self._find_free_experiment_path(set_name, raw_name)
         logger.info('Experiment name is %s', experiment_path)
         experiment = Experiment(self._archiveName, experiment_path)
         experiment.archive_project(self._project, description)
@@ -114,11 +132,14 @@ class ExperimentArchiver:
         logger.info('Restoring experiment %s to project %s', experiment_path, self._archiveName)
         experiment = Experiment(self._archiveName, experiment_path)
         self._project.restore_to_project(experiment)
-    
-    def run_and_archive(self, raw_name, command):
+
+
+"""
+    def run_and_archive(self, set_name, raw_name, command):
         self.run(command)
-        self.archive(raw_name)
+        self.archive(set_name, raw_name)
     
     def restore_and_run(self, experiment_name):
         self.restore(experiment_name)
         self.run_last_command()
+        """

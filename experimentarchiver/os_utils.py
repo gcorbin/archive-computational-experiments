@@ -42,7 +42,7 @@ def split_all_subpaths(path):
 
 def is_composite(path):
     parts = split_all_parts(path)
-    return os.path.isabs(path) or len(parts) > 1
+    return os.path.isabs(path) or (len(parts) > 1 and parts[-1] != '')
 
 
 def make_all_directories(path):
