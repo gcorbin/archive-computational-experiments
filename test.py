@@ -1,11 +1,12 @@
-from Beholding.archivist import ExperimentArchiver, split_archive_and_experiment_name
+import Beholding.os_utils as os_utils
+from Beholding.archivist import Archivist
 
 projectName = 'Testproject'
 command = './do-stuff order. reverse in is sentence This'.split(' ')
-archiver = ExperimentArchiver(projectName)
+archiver = Archivist(projectName)
 archiver.run_and_record(command)
 state = archiver.archive('stuff')
 experimentPath = state._archiveOptions.path('experiment-path')
-archiveName, experimentName = split_archive_and_experiment_name(experimentPath)
-archiver.restore(experimentName)
-archiver.run_last_command()
+archiveName, experimentName = os_utils.split_path_after_first_component(experimentPath)
+archiver.remember(experimentName)
+archiver.replay()

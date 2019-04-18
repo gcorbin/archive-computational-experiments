@@ -5,7 +5,7 @@ import sys
 import argparse
 import logging
 import Beholding.os_utils as os_utils
-from Beholding.archivist import ExperimentArchiver, split_archive_and_experiment_name
+from Beholding.archivist import Archivist
 from Beholding.defaultlogger import set_default_logging_behavior
 
 logger = logging.getLogger('Beholding.main')
@@ -15,11 +15,11 @@ def make_command_list(command_str):
     return command_str.split(' ')
 
 
-def split_experiment_sub_path(archive_name, experiment_path):
-    archive_name_from_experiment, experiment_sub_path = split_archive_and_experiment_name(experiment_path)
+def split_casefile_sub_path(archive_name, casefile_path):
+    archive_name_from_experiment, casefile_subpath = os_utils.split_path_after_first_component(casefile_path)
     if not archive_name_from_experiment == os.path.normpath(archive_name):
-        experiment_sub_path = experiment_path
-    return experiment_sub_path
+        casefile_subpath = casefile_path
+    return casefile_subpath
 
 
 if __name__ == '__main__':
@@ -81,33 +81,33 @@ if __name__ == '__main__':
         if os_utils.is_composite(args.archive):
             raise Exception('The archive name must not be composite. Got {0}'.format(args.archive))
 
-        archiver = ExperimentArchiver(args.archive)
+        archivist = Archivist(args.archive)
 
         override_options = {}
         if args.mode == 'archive' or args.mode == 'record-and-archive':
             override_options['do-record-outputs'] = not args.no_outputs
-        archiver.update_options(override_options)
+        archivist.update_options(override_options)
 
         if args.mode == 'record':
-            archiver.run(make_command_list(args.command))
-        elif args.mode == 'rerun':
-            archiver.run_last_command()
+            archivist.record(make_command_list(args.command))
+        elif args.mode == 'replay':
+            archivist.replay()
         elif args.mode == 'new-file-cabinet':
-            archiver.create_new_set(args.file_cabinet, args.description)
+            archivist.create_new_filecabinet(args.file_cabinet, args.description)
         elif args.mode == 'archive':
-            experiment_name = split_experiment_sub_path(args.archive, args.name)
-            archiver.archive(args.file_cabinet, experiment_name, args.description)
+            casefile_name = split_casefile_sub_path(args.archive, args.name)
+            archivist.archive(args.file_cabinet, casefile_name, args.description)
         elif args.mode == 'remember':
-            experiment_name = split_experiment_sub_path(args.archive, args.experiment)
-            archiver.restore(experiment_name)
+            casefile_name = split_casefile_sub_path(args.archive, args.experiment)
+            archivist.remember(casefile_name)
         elif args.mode == 'remember-and-replay':
-            experiment_name = split_experiment_sub_path(args.archive, args.experiment)
-            archiver.restore(experiment_name)
-            archiver.run_last_command()
+            casefile_name = split_casefile_sub_path(args.archive, args.experiment)
+            archivist.remember(casefile_name)
+            archivist.replay()
         elif args.mode == 'record-and-archive':
-            experiment_name = split_experiment_sub_path(args.archive, args.name)
-            archiver.run(make_command_list(args.command))
-            archiver.archive(args.set, experiment_name, args.description)
+            casefile_name = split_casefile_sub_path(args.archive, args.name)
+            archivist.record(make_command_list(args.command))
+            archivist.archive(args.set, casefile_name, args.description)
         else:
             raise Exception('Unrecognised mode : {0}'.format(args.mode))
 
