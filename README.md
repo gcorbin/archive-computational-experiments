@@ -6,7 +6,7 @@ ideally the following prerequisites have to be restored exactly:
 - source code
 - execution command with all arguments
 - parameters (small files that could contain known physical quantities or program options, *.ini files)
-- input data (large [binary] files)
+- input data (large (binary) files)
 - environment (os version and version of all external packages, hardware)
 
 This tool helps to archive and reproduce experiments automatically:
@@ -16,7 +16,7 @@ Archiving:
 - command: store the calling command
 - parameters: copy the files
 - input data: store a hash for every file
-- output data: copy the output (optional), *not implemented yet*
+- output data: copy the output (optional)
 - environment: **not planned**, as it is beyond the scope of this project
 
 Reproducing:
@@ -25,6 +25,7 @@ Reproducing:
 - ensure that the input data files are the same by comparing hashes
 - build the executable (if a compiled language is used)
 - run the stored command
+- compare stored outputs with computed outputs (optional) *not implemented yet*
 
 The following assumptions are made about the experiment setup:
 - the code is versioned with git
