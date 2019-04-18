@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
     args = main_parser.parse_args()
 
-    set_default_logging_behavior(logfile='ace')
+    set_default_logging_behavior(logfile='Archivist')
 
     try:
 
