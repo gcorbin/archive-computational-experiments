@@ -21,7 +21,7 @@ class ExperimentState:
         self.commitHash = ''
         self.pathsToParameters = []
         self.inputData = []
-        self.pathsToOutputData = []
         self.command = []
         self.environment = None
         self.description = ''
+        self.pathsToOutputData = []

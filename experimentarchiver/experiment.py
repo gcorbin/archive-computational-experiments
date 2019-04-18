@@ -39,7 +39,7 @@ class Experiment:
                 logger.warning('The version file is corrupted. Cannot parse the version number.')
                 return
             if current_version == stored_version:
-                logger.info('The current program version %s matches the version used to record the experiment',
+                logger.info('The current program version %s matches the version used to record the experiment.',
                             str(current_version))
             else:
                 if current_version > stored_version:
@@ -47,7 +47,7 @@ class Experiment:
                 else:
                     comp = 'OLDER'
                 logger.warning('The current program version %s is %s'
-                               ' than the version %s used to record the experiment',
+                               ' than the version %s used to record the experiment.',
                                str(current_version), comp, str(stored_version))
         else:
             logger.warning('There is no version file for this experiment. '
@@ -55,22 +55,22 @@ class Experiment:
 
     def read_from_archive(self):
         state = experimentstate.ExperimentState()
-        logger.info('Reading from archive')
+        logger.info('Reading from archive.')
         self._check_version()
         logger.debug('Experiment directory is %s', self.path('experiment-path'))
         state.commitHash = experimentstate.read_json(self.path('commit-hash'))
         state.pathsToParameters = experimentstate.read_json(self.path('parameter-list'))
         state.inputData = experimentstate.read_json(self.path('input-files'))
-        state.pathsToOutputData = []  # not yet implemented
         state.command = experimentstate.read_json(self.path('last-command'))
         state.environment = None  # not yet implemented
         with open(self.path('description'), 'r') as f:
             state.description = f.readline().strip('\n')
         logger.info('Experiment description: %s ...', state.description)
+        state.pathsToOutputData = []  # nothing to do
         return state
 
     def write_to_archive(self, project, state):
-        logger.info('Writing to archive')
+        logger.info('Writing experiment to archive.')
         os_utils.make_all_directories(self.path('experiment-path'))
         logger.debug('Experiment directory is %s', self.path('experiment-path'))
         if not current_version.is_release():
@@ -85,20 +85,21 @@ class Experiment:
                             state.pathsToParameters,
                             create_directories=True)
         experimentstate.write_json(state.inputData, self.path('input-files'))
-        os_utils.make_directory_if_nonexistent(self.path('output-path'))
-        os_utils.copy_changed_files(project.path('output-data-path'), self.path('output-path'), state.pathsToOutputData)
         experimentstate.write_json(state.command, self.path('last-command'))
         # environment not yet implemented
         with open(self.path('description'), 'w') as f:
             f.write(state.description)
+        if project.option('do-record-outputs'):
+            logger.info('Copying outputs to archive.')
+            os_utils.make_directory_if_nonexistent(self.path('output-path'))
+            os_utils.copy_changed_files(project.path('output-data-path'), self.path('output-path'), state.pathsToOutputData)
 
     def archive_project(self, project, description=None):
         state = project.read_from_project()
         if description is not None:
             state.description = description
         if state.command['status'] != 0:
-            logger.error('Archiving failed runs is not allowed')
-            raise Exception('Archiving failed runs is not allowed')
+            raise Exception('Archiving failed runs is not allowed.')
         try:
             self.write_to_archive(project, state)
         except Exception:

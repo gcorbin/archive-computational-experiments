@@ -42,7 +42,7 @@ def split_all_subpaths(path):
 
 def is_composite(path):
     parts = split_all_parts(path)
-    return os.path.isabs(path) or (len(parts) > 1 and parts[-1] != '')
+    return os.path.isabs(path) or (len(parts) == 2 and parts[-1] != '') or (len(parts) > 2)
 
 
 def make_all_directories(path):
@@ -66,11 +66,11 @@ def copy_files(from_path, to_path, files, create_directories=False):
 
 def create_snapshot(path):
     snapshot = {}
-    for root, dirs, files in os.walk(path):
+    for current_dir, dirs, files in os.walk(path):
         for filename in files:
-            name = os.path.join(root, filename)
+            name = os.path.join(current_dir, filename)
             st = os.stat(name)
-            snapshot[(root, filename)] = st
+            snapshot[(current_dir, filename)] = st
     return snapshot
 
 

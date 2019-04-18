@@ -101,7 +101,7 @@ class ExperimentArchiver:
         logger.info('Creating new experiment set %s for project %s', set_name, self._archiveName)
         set_path = self._get_path_to_set(set_name)
         if os.path.isdir(set_path):
-            logger.warning('Cannot use an existing folder %s to create a new set', set_path)
+            logger.warning('Cannot use an existing folder %s to create a new set.', set_path)
             return
         os_utils.make_directory_if_nonexistent(set_path)
 

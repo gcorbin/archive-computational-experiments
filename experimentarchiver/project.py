@@ -90,7 +90,7 @@ class Project:
         return self._options[key]
 
     def read_command(self):
-        logger.info('Reading status of last command')
+        logger.info('Reading status of last command.')
         logger.debug('... from file %s', self.path('last-command'))
         record_file = self.path('last-command')
         try:
@@ -101,26 +101,27 @@ class Project:
         return command_record
 
     def record_command(self, command_record):
-        logger.info('Recording status of last command')
+        logger.info('Recording status of last command.')
         logger.debug('... to file %s', self.path('last-command'))
         experimentstate.write_json(command_record, self.path('last-command'))
 
     def take_output_snapshot(self):
         if self.option('do-record-outputs'):
-            snapshot = os_utils.create_snapshot(self.path('output-data-path'))
+            with os_utils.ChangedDirectory(self.path('output-data-path')):
+                snapshot = os_utils.create_snapshot('.')
             if self._output_snapshot is not None:
                 self._output_changes = os_utils.compute_changed_files(self._output_snapshot, snapshot)
             self._output_snapshot = snapshot
 
     def record_output_changes(self):
         if self.option('do-record-outputs'):
-            logger.info('Recording changes in output folder')
+            logger.info('Recording changes in output folder.')
             logger.debug('Output folder is %s', self.path('output-data-path'))
             experimentstate.write_json(self._output_changes, self.path('output-changes'))
 
     def read_output_changes(self):
         if self.option('do-record-outputs'):
-            logger.info('Reading changed outputs')
+            logger.info('Reading changed outputs.')
             logger.debug('... from file %s', self.path('output-changes'))
             changes_file = self.path('output-changes')
             try:
@@ -129,6 +130,7 @@ class Project:
                 logger.error('Could not find a record of the output changes in %s', changes_file)
                 return []
             return output_changes
+        return []
 
     def _hash_input_data(self):
         logger.info('Hashing input data.')
@@ -167,11 +169,11 @@ class Project:
                                                     self.path('top-path'),
                                                     state.pathsToParameters)
         if not repo_is_clean:
-            raise Exception('The git repository contains unstaged or uncommitted changes')
+            raise Exception('The git repository contains unstaged or uncommitted changes.')
         state.inputData = self._hash_input_data()
-        state.pathsToOutputData = self.read_output_changes()
         state.command = self.read_command()
         state.environment = None  # not yet implemented
+        state.pathsToOutputData = self.read_output_changes()
         return state
 
     def restore_to_project(self, experiment):
@@ -188,7 +190,7 @@ class Project:
                             state.pathsToParameters,
                             create_directories=False)
         self._verify_hashes(state.inputData)
-        # output data will not be restored
         self.record_command(state.command)
         # environment not implemented
+        # output data will not be restored
         self.build_project()
