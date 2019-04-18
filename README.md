@@ -1,5 +1,13 @@
-# archive-computational-experiments
-A python tool to archive and reproduce computational experiments.
+## The Archivist:
+### A python tool to archive and reproduce computational experiments.
+
+The name is a shoutout to [The Magnus Archives](http://rustyquill.com/the-magnus-archives/). 
+
+The main motivation behind this project is to create the digital equivalent of a **lab-journal** for computational experiments. 
+It should help with: 
+- retracing the exact setup of old experiments
+- organizing outputs of computations
+- reproducing old computations
 
 To reproduce a computational experiment, 
 ideally the following prerequisites have to be restored exactly:
@@ -9,7 +17,7 @@ ideally the following prerequisites have to be restored exactly:
 - input data (large (binary) files)
 - environment (os version and version of all external packages, hardware)
 
-This tool helps to archive and reproduce experiments automatically:
+The two main operating modes of the Archivist are:  
 
 Archiving:
 - code: store the git commit hash
@@ -31,3 +39,5 @@ The following assumptions are made about the experiment setup:
 - the code is versioned with git
 - for compiled languages, there is a build system (e.g. cmake) in place, such that the entire project can be built with one command
 - large input data is archived separately 
+- input data are all under a common folder
+- program output is generated in single folder
