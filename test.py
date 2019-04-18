@@ -1,4 +1,4 @@
-from experimentarchiver.archiver import ExperimentArchiver, split_archive_and_experiment_name
+from Beholding.archivist import ExperimentArchiver, split_archive_and_experiment_name
 
 projectName = 'Testproject'
 command = './do-stuff order. reverse in is sentence This'.split(' ')

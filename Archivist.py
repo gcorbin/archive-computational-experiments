@@ -4,11 +4,11 @@ import os
 import sys
 import argparse
 import logging
-import experimentarchiver.os_utils as os_utils
-from experimentarchiver.archiver import ExperimentArchiver, split_archive_and_experiment_name
-from experimentarchiver.defaultlogger import set_default_logging_behavior
+import Beholding.os_utils as os_utils
+from Beholding.archivist import ExperimentArchiver, split_archive_and_experiment_name
+from Beholding.defaultlogger import set_default_logging_behavior
 
-logger = logging.getLogger('experimentarchiver.main')
+logger = logging.getLogger('Beholding.main')
 
 
 def make_command_list(command_str):
@@ -26,22 +26,22 @@ if __name__ == '__main__':
     parent_parser = argparse.ArgumentParser()
     parent_parser.add_argument('archive', help='Which archive to work on.')
 
-    main_parser = argparse.ArgumentParser(description='Archive computational experiments')
+    main_parser = argparse.ArgumentParser(description='Record and archive computational experiments')
     subparsers = main_parser.add_subparsers(dest='mode', title='Subcommands',
                                             description='Select one of the following operations: ')
 
-    run_parser = subparsers.add_parser('run', parents=[parent_parser], conflict_handler='resolve',
+    run_parser = subparsers.add_parser('record', parents=[parent_parser], conflict_handler='resolve',
                                        help='Run a command in the project build directory and record it.')
     run_parser.add_argument('command', help='The command line argument to run. '
                                             'Put multiple arguments in a quoted string')
 
-    rerun_parser = subparsers.add_parser('rerun', parents=[parent_parser], conflict_handler='resolve',
+    rerun_parser = subparsers.add_parser('replay', parents=[parent_parser], conflict_handler='resolve',
                                          help='Run the last recorded command.')
 
-    new_set_parser = subparsers.add_parser('new-set', parents=[parent_parser], conflict_handler='resolve',
+    new_set_parser = subparsers.add_parser('new-file-cabinet', parents=[parent_parser], conflict_handler='resolve',
                                            help='Create a new sub-folder and templates'
                                                 ' for a set of related experiments')
-    new_set_parser.add_argument('set', help='The name of the sub-folder')
+    new_set_parser.add_argument('file_cabinet', help='The name of the sub-folder')
     new_set_parser.add_argument('-d', '--description', help='Summarize the goal of this set of experiments', default='')
 
     archive_parser = subparsers.add_parser('archive', parents=[parent_parser], conflict_handler='resolve',
@@ -50,20 +50,20 @@ if __name__ == '__main__':
                                              'The experiment will be stored under <date>_<name>_<number>')
     archive_parser.add_argument('-d', '--description', help='Describe your experiment here in a few words. '
                                                             'Use #tag s to help you find an experiment later')
-    archive_parser.add_argument('-s', '--set', help='The experiment set to use.', default='')
+    archive_parser.add_argument('-f', '--file-cabinet', help='The experiment set to use.', default='')
     archive_parser.add_argument('--no-outputs', help='This flag supresses copying program outputs to the archive',
                                 action='store_true')
 
-    restore_parser = subparsers.add_parser('restore', parents=[parent_parser], conflict_handler='resolve',
+    restore_parser = subparsers.add_parser('remember', parents=[parent_parser], conflict_handler='resolve',
                                            help='Restore an experiment to the project.')
     restore_parser.add_argument('experiment', help='Relative path to the experiment folder')
 
-    restore_and_run_parser = subparsers.add_parser('restore-and-run', parents=[parent_parser],
+    restore_and_run_parser = subparsers.add_parser('remember-and-replay', parents=[parent_parser],
                                                    conflict_handler='resolve',
                                                    help='Restore an experiment to the project and run it.')
     restore_and_run_parser.add_argument('experiment', help='Relative path to the experiment folder')
 
-    run_and_archive_parser = subparsers.add_parser('run-and-archive', parents=[archive_parser],
+    run_and_archive_parser = subparsers.add_parser('record-and-archive', parents=[archive_parser],
                                                    conflict_handler='resolve',
                                                    help='Run a command and store the experiment to the archive.')
     run_and_archive_parser.add_argument('command', help='The command line argument to run. '
@@ -84,27 +84,27 @@ if __name__ == '__main__':
         archiver = ExperimentArchiver(args.archive)
 
         override_options = {}
-        if args.mode == 'archive' or args.mode == 'run-and-archive':
+        if args.mode == 'archive' or args.mode == 'record-and-archive':
             override_options['do-record-outputs'] = not args.no_outputs
         archiver.update_options(override_options)
 
-        if args.mode == 'run':
+        if args.mode == 'record':
             archiver.run(make_command_list(args.command))
         elif args.mode == 'rerun':
             archiver.run_last_command()
-        elif args.mode == 'new-set':
-            archiver.create_new_set(args.set, args.description)
+        elif args.mode == 'new-file-cabinet':
+            archiver.create_new_set(args.file_cabinet, args.description)
         elif args.mode == 'archive':
             experiment_name = split_experiment_sub_path(args.archive, args.name)
-            archiver.archive(args.set, experiment_name, args.description)
-        elif args.mode == 'restore':
+            archiver.archive(args.file_cabinet, experiment_name, args.description)
+        elif args.mode == 'remember':
             experiment_name = split_experiment_sub_path(args.archive, args.experiment)
             archiver.restore(experiment_name)
-        elif args.mode == 'restore-and-run':
+        elif args.mode == 'remember-and-replay':
             experiment_name = split_experiment_sub_path(args.archive, args.experiment)
             archiver.restore(experiment_name)
             archiver.run_last_command()
-        elif args.mode == 'run-and-archive':
+        elif args.mode == 'record-and-archive':
             experiment_name = split_experiment_sub_path(args.archive, args.name)
             archiver.run(make_command_list(args.command))
             archiver.archive(args.set, experiment_name, args.description)
