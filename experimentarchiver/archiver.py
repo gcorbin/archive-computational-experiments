@@ -31,6 +31,9 @@ class ExperimentArchiver:
         options_file = os.path.join(archive_name, 'project.ini')
         self._project = Project(options_file)
 
+    def update_options(self, options):
+        self._project.update_options(options)
+
     def _get_path_to_experiment(self, set_name, experiment_path):
         if set_name != '':
             experiment_path = os.path.join('data', experiment_path)

@@ -51,6 +51,8 @@ if __name__ == '__main__':
     archive_parser.add_argument('-d', '--description', help='Describe your experiment here in a few words. '
                                                             'Use #tag s to help you find an experiment later')
     archive_parser.add_argument('-s', '--set', help='The experiment set to use.', default='')
+    archive_parser.add_argument('--no-outputs', help='This flag supresses copying program outputs to the archive',
+                                action='store_true')
 
     restore_parser = subparsers.add_parser('restore', parents=[parent_parser], conflict_handler='resolve',
                                            help='Restore an experiment to the project.')
@@ -80,6 +82,11 @@ if __name__ == '__main__':
             raise Exception('The archive name must not be composite. Got {0}'.format(args.archive))
 
         archiver = ExperimentArchiver(args.archive)
+
+        override_options = {}
+        if args.mode == 'archive' or args.mode == 'run-and-archive':
+            override_options['do-record-outputs'] = not args.no_outputs
+        archiver.update_options(override_options)
 
         if args.mode == 'run':
             archiver.run(make_command_list(args.command))

@@ -83,6 +83,9 @@ class Project:
         self._output_snapshot = None
         self._output_changes = []
 
+    def update_options(self, options):
+        self._options.update(options)
+
     def path(self, key):
         return self._paths[key]
 
