@@ -64,6 +64,7 @@ class Project:
         else:
             self._options['build-command'] = ''
         self._options['do-record-outputs'] = config.getboolean('options', 'do-record-outputs', fallback=False)
+        self._options['do-record-console'] = config.getboolean('options', 'do-record-console', fallback=False)
         self._options['hash-algorithm'] = config.get('options', 'hash-algorithm', fallback='sha256')
         extra_args = config.get('options', 'append-arguments', fallback='')
         extra_args = extra_args.strip()
@@ -79,6 +80,8 @@ class Project:
             self._paths[key] = config.get('paths', key)
         if self.option('do-record-outputs'):
             self._paths['output-changes'] = config.get('paths', 'output-changes')
+        if self.option('do-record-console'):
+            self._paths['console-log'] = config.get('paths', 'console-log')
 
         self._output_snapshot = None
         self._output_changes = []

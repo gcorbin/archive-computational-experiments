@@ -1,3 +1,4 @@
+import sys
 import os
 import copy
 import subprocess
@@ -60,7 +61,17 @@ class Archivist:
                 augmented_command = copy.copy(command_record['command'])
                 augmented_command.extend(extra_args)
                 logger.debug('Executing command %s', augmented_command)
-                command_record['status'] = subprocess.call(augmented_command)
+                if self._project.option('do-record-console'):
+                    with open(self._project.path('console-log'), 'w') as logfile:
+                        #command_record['status'] = subprocess.call(augmented_command, stdout=logfile)
+                        proc = subprocess.Popen(augmented_command, stdout=subprocess.PIPE)
+                        for line in iter(proc.stdout.readline, b''):
+                            sys.stdout.write(line)
+                            logfile.write(line)
+                        proc.stdout.close()
+                        command_record['status'] = proc.wait()
+                else:
+                    command_record['status'] = subprocess.call(augmented_command)
         finally:
             self._project.record_command(command_record)
         if command_record['status'] != 0:
