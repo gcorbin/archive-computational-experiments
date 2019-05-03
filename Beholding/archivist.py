@@ -74,12 +74,12 @@ class Archivist:
                     command_record['status'] = subprocess.call(augmented_command)
         finally:
             self._project.record_command(command_record)
-        if command_record['status'] != 0:
-            logger.warning('Command exited with non-zero status: %s', command_record['status'])
-        else:
-            logger.info('Successfully executed the command.')
-        self._project.take_output_snapshot()
-        self._project.record_output_changes()
+            if command_record['status'] != 0:
+                logger.warning('Command exited with non-zero status: %s', command_record['status'])
+            else:
+                logger.info('Successfully executed the command.')
+            self._project.take_output_snapshot()
+            self._project.record_output_changes()
 
         return command_record
 

@@ -98,7 +98,9 @@ class Casefile:
         if description is not None:
             state.description = description
         if state.command['status'] != 0:
-            raise Exception('Archiving failed runs is not allowed.')
+            logger.warning('A nonzero exit status was was recorded, indicating that the last run was unsuccessful or '
+                           'interrupted')
+            logger.debug('Exit status : {0}'.format(state.command['status']))
         try:
             self.write_to_archive(project, state)
         except Exception:
