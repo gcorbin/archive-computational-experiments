@@ -6,8 +6,8 @@ import hashlib
 import subprocess
 
 import Beholding.statement as statement
-import git_utils
-import os_utils
+import Beholding.git_utils as git_utils
+import Beholding.os_utils as os_utils
 
 logger = logging.getLogger(__name__)
 

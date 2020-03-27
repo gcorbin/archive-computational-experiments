@@ -5,7 +5,7 @@ import shutil
 from Beholding import Version
 from Beholding import version as current_version
 import Beholding.statement as statement
-import os_utils
+import Beholding.os_utils as os_utils
 
 
 logger = logging.getLogger(__name__)
