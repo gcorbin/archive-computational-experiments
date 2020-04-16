@@ -85,7 +85,8 @@ if __name__ == '__main__':
 
         override_options = {}
         if args.mode == 'archive' or args.mode == 'record-and-archive':
-            override_options['do-record-outputs'] = not args.no_outputs
+            if args.no_outputs: 
+                override_options['do-record-outputs'] = False
         archivist.update_options(override_options)
 
         if args.mode == 'record':
