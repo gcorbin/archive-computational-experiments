@@ -64,10 +64,13 @@ class Archivist:
                 if self._project.option('do-record-console'):
                     with open(self._project.path('console-log'), 'w') as logfile:
                         #command_record['status'] = subprocess.call(augmented_command, stdout=logfile)
-                        proc = subprocess.Popen(augmented_command, stdout=subprocess.PIPE)
-                        for line in iter(proc.stdout.readline, b''):
+                        proc = subprocess.Popen(augmented_command, stdout=subprocess.PIPE, universal_newlines=False)
+                        line = proc.stdout.readline(80) 
+                        while line != b'':
+                        #for line in iter(proc.stdout.readline, b''):
                             sys.stdout.write(line)
                             logfile.write(line)
+                            line = proc.stdout.readline(80)
                         proc.stdout.close()
                         command_record['status'] = proc.wait()
                 else:
