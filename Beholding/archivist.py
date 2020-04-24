@@ -63,14 +63,28 @@ class Archivist:
                 logger.debug('Executing command %s', augmented_command)
                 if self._project.option('do-record-console'):
                     with open(self._project.path('console-log'), 'w') as logfile:
-                        #command_record['status'] = subprocess.call(augmented_command, stdout=logfile)
                         proc = subprocess.Popen(augmented_command, stdout=subprocess.PIPE, universal_newlines=False)
+                        # this mess is necessary to handle '\r' characters correctly in the console output 
+                        # universal_newlines=True would translate '\r' to '\n'
+                        # which would spam the console 
+                        #
+                        # the readline() method only recongnises '\n' characters
+                        # therefore, we read the output in small chunks, and 
+                        # detect both '\r' and '\n' manually
+                        buf = ''
                         line = proc.stdout.readline(80) 
+                        buf = buf + line
                         while line != b'':
-                        #for line in iter(proc.stdout.readline, b''):
-                            sys.stdout.write(line)
-                            logfile.write(line)
+                            ri = max(buf.rfind('\n'), buf.rfind('\r'))
+                            if ri > 0: 
+                                buf_left = buf[:ri+1]
+                                buf = buf[ri+1:]
+                                sys.stdout.write(buf_left)
+                                logfile.write(buf_left)
                             line = proc.stdout.readline(80)
+                            buf = buf + line
+                        sys.stdout.write(buf)
+                        logfile.write(buf)
                         proc.stdout.close()
                         command_record['status'] = proc.wait()
                 else:
