@@ -77,11 +77,11 @@ class Project:
         for key in ['git-path', 'top-path', 'build-path', 'input-data-path',
                     'parameter-list', 'last-command',
                     'output-data-path', 'get-input-files']:
-            self._paths[key] = config.get('paths', key)
+            self._paths[key] = os.path.abspath(config.get('paths', key))
         if self.option('do-record-outputs'):
-            self._paths['output-changes'] = config.get('paths', 'output-changes')
+            self._paths['output-changes'] = os.path.abspath(config.get('paths', 'output-changes'))
         if self.option('do-record-console'):
-            self._paths['console-log'] = config.get('paths', 'console-log')
+            self._paths['console-log'] = os.path.abspath(config.get('paths', 'console-log'))
 
         self._output_snapshot = None
         self._output_changes = []
